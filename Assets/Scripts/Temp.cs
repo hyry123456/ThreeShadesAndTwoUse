@@ -1,0 +1,32 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using DefferedRender;
+public class Temp : MonoBehaviour
+{
+    ParticleDrawData drawData = new ParticleDrawData
+    {
+        //beginPos = Vector3.zero,
+        beginSpeed = Vector3.up,
+        speedMode = SpeedMode.JustBeginSpeed,
+        useGravity = false,
+        followSpeed = true,
+        radius = 10,
+        radian = 6.28f,
+        lifeTime = 5,
+        showTime = 5,
+        frequency = 1,
+        octave = 4,
+        intensity = 30,
+        sizeRange =  Vector2.up,
+        colorIndex = ColorIndexMode.HighlightAlphaToAlpha,
+        textureIndex = 0,
+        groupCount = 1
+    };
+
+    void Update()
+    {
+        drawData.beginPos = transform.position;
+        ParticleNoiseFactory.Instance.DrawSphere(drawData);
+    }
+}

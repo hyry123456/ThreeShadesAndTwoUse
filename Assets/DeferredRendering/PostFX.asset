@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d693719bbe6e4945b3a089b608bf73d, type: 3}
+  m_Name: PostFX
+  m_EditorClassIdentifier: 
+  postFXShader: {fileID: 4800000, guid: 6c3a07466ffb3c7469bfd1e374913cbb, type: 3}
+  colorLUTResolution: 32
+  ssrSetting:
+    useSSR: 1
+    rayMarchingSetp: 36
+    marchSetpSize: 18
+    maxMarchDistance: 500
+    depthThickness: 1
+  bulkLight:
+    useBulkLight: 1
+    shrinkRadio: 288
+    circleCount: 23
+    scatterRadio: 0.63
+    checkDistance: 1000
+  bloom:
+    maxIterations: 6
+    downscaleLimit: 30
+    bicubicUpsampling: 0
+    threshold: 1.2
+    thresholdKnee: 0.837
+    intensity: 0.8
+    fadeFireflies: 1
+    mode: 0
+    scatter: 0.605
+  toneMapping:
+    mode: 1
+  colorAdjustments:
+    postExposure: 0
+    contrast: 0
+    colorFilter: {r: 1, g: 1, b: 1, a: 1}
+    hueShift: 0
+    saturation: 0
+  whiteBalance:
+    temperature: 0
+    tint: 0
+  splitToning:
+    shadows: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    highlights: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    balance: 0
+  fXAA:
+    luminanceMode: 2
+    contrastThreshold: 0.0665
+    relativeThreshold: 0.217
+    subpixelBlending: 1
+    lowQuality: 0
+  detectiveView:
+    useDetective: 0
