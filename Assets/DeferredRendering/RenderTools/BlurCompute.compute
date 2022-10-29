@@ -2,7 +2,6 @@
 Texture2D<float4> _OriginTexture;
 RWTexture2D<float4> _TargetTexture;
 
-
 uint2 _TextureSize;
 
 struct ComputeShaderInput

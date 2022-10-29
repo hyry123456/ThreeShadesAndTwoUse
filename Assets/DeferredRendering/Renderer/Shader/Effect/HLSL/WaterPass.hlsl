@@ -1,5 +1,5 @@
-#ifndef DEFFER_GBUFFER_READY_PASS_INCLUDED
-#define DEFFER_GBUFFER_READY_PASS_INCLUDED
+#ifndef DEFFER_WATER_PASS_INCLUDE
+#define DEFFER_WATER_PASS_INCLUDE
 
 #include "../../ShaderLibrary/Surface.hlsl"
 #include "../../ShaderLibrary/Shadows.hlsl"
@@ -22,10 +22,8 @@ struct Varyings {
 	float4 TtoW0 : VAR_TT0;
 	float4 TtoW1 : VAR_TT1;
 	float4 TtoW2 : VAR_TT2;
-	float2 baseUV : VAR_BASE_UV;
-	#if defined(_DETAIL_MAP)
-		float2 detailUV : VAR_DETAIL_UV;
-	#endif
+	float4 baseUV : VAR_BASE_UV;
+    float4 noiseUV : VAR_NOISE;
 	GI_VARYINGS_DATA
 	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -47,11 +45,10 @@ Varyings LitPassVertex (Attributes input) {
 	output.TtoW2 = float4(tangentWS.z, binormalWS.z, normalWS.z, positionWS.z);
 
 	output.baseUV = TransformBaseUV(input.baseUV);
-	#if defined(_DETAIL_MAP)
-		output.detailUV = TransformDetailUV(input.baseUV);
-	#endif
+    output.noiseUV = input.baseUV.xyxy * float4(1, 1, 1.3, 1.3) + float4(1, 1, -1, -2) * _Time.x;
 	return output;
 }
+
 
 void LitPassFragment (Varyings input,
         out float4 _GBufferColorTex : SV_Target0,
@@ -61,54 +58,58 @@ void LitPassFragment (Varyings input,
 		out float4 _ReflectTargetTex : SV_Target4
     ) {
 	UNITY_SETUP_INSTANCE_ID(input);
-	InputConfig config = GetInputConfig(input.baseUV);
 	ClipLOD(input.positionCS_SS.xy, unity_LODFade.x);
 	
-	#if defined(_MASK_MAP)
-		config.useMask = true;
-	#endif
-	#if defined(_DETAIL_MAP)
-		config.detailUV = input.detailUV;
-		config.useDetail = true;
-	#endif
-	
 	//纹理颜色
-	float4 base = GetBase(config);
+	float4 base = GetBase(input.baseUV.xy);
 	float3 positionWS = float3(input.TtoW0.w, input.TtoW1.w, input.TtoW2.w);
 	#if defined(_CLIPPING)
-		clip(base.a - GetCutoff(config));
+		clip(base.a - GetCutoff());
 	#endif
 	
 	float3 normal;
 	float3 perNormal = float3(input.TtoW0.z, input.TtoW1.z, input.TtoW2.z);
 	#if defined(_NORMAL_MAP)
-		normal = GetNormalTS(config);
+		normal = GetNormalTS(input.baseUV.xy);
 		normal = normalize(float3(dot(input.TtoW0.xyz, normal), dot(input.TtoW1.xyz, normal), dot(input.TtoW2.xyz, normal)));
 	#else
 		normal = normalize(perNormal);
 	#endif
 
-	float width = GetWidth(config);
-	float4 specularData = float4(GetMetallic(config), GetSmoothness(config), GetFresnel(config), width);		//w赋值为1表示开启PBR
+	float width = GetWidth();
+	float4 specularData = float4(GetMetallic(), GetSmoothness(), GetFresnel(), width);		//w赋值为1表示开启PBR
 
 	//烘焙灯光，只处理了烘焙贴图，没有处理阴影烘焙，需要注意
 	float3 bakeColor = GetBakeDate(GI_FRAGMENT_DATA(input), positionWS, perNormal);
 	float oneMinusReflectivity = OneMinusReflectivity(specularData.r);
 	float3 diffuse = base.rgb * oneMinusReflectivity;
-	bakeColor = bakeColor * diffuse + GetEmission(config);				//通过金属度缩减烘焙光，再加上自发光，之后会在着色时直接加到最后的结果上
-	float4 shiftColor = GetShiftColor(config);			//分别使用三张图的透明通道写入
+	bakeColor = bakeColor * diffuse + GetEmission(input.baseUV.xy);				//通过金属度缩减烘焙光，再加上自发光，之后会在着色时直接加到最后的结果上
+	float4 shiftColor = GetShiftColor();			//分别使用三张图的透明通道写入
 
-	float3 reflectDir = reflect( normalize((positionWS - _WorldSpaceCameraPos)), normal);
+    float3 viewDir = normalize(positionWS - _WorldSpaceCameraPos);
+	float3 reflectDir = reflect(viewDir, normal);
+    float3 orirefDir = reflect(viewDir, perNormal);
+
+    float3 noiseNor = GetNoiseNormal(input.noiseUV);
 
 	float3 reflect = ComputeIndirectSpecular(reflectDir, positionWS);
+	float3 reflect1 = ComputeIndirectSpecular(orirefDir, positionWS + noiseNor * 3);
 
-	_GBufferColorTex = float4(base.xyz, shiftColor.x);
-	_GBufferNormalTex = float4(normal * 0.5 + 0.5, shiftColor.y);
-	_GBufferSpecularTex = specularData;
+    float3 waterVal = GetWater(input.baseUV.zw);
+    float4 waterCol = GetWaterCol();
 
-	_ReflectTargetTex = float4(reflect, 1);
-	_GBufferBakeTex = float4(bakeColor, shiftColor.z);
+    float3 buffCol = lerp(base.xyz, waterCol.xyz, waterVal.x);
+    float3 buffNor = lerp(normal, orirefDir, waterVal.x) * 0.5 + 0.5;
+    float4 buffSpe = lerp(specularData, float4(1, 1, 0.3, 1), waterVal.x);
+    // float4 buffSpe = float4(1, 1, 0.3, 1);
+    float3 buffRef = lerp(reflect, reflect1, waterVal.x);
+    float3 bakeCol = lerp(bakeColor, 0, waterVal.x);
+
+	_GBufferColorTex = float4(buffCol, shiftColor.x);
+	_GBufferNormalTex = float4(buffNor, shiftColor.y);
+	_GBufferSpecularTex = buffSpe;
+	_ReflectTargetTex = float4(buffRef, 1);
+	_GBufferBakeTex = float4(bakeCol, shiftColor.z);
 }
-
 
 #endif

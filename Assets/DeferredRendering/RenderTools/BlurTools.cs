@@ -19,6 +19,7 @@ namespace DefferedRender
 
         public int blurVerticalCount = 0;
         public int blurHorizontalCount = 0;
+        
 
         private void OnValidate()
         {
@@ -90,7 +91,7 @@ namespace DefferedRender
                     TextureFormat.ARGB32, false);
                 png.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
                 byte[] bytes = png.EncodeToPNG();
-                string path = string.Format("Assets/SaveText.png");
+                string path = string.Format("Assets/BlurTarget.png");
                 FileStream fs = File.Open(path, FileMode.Create);
                 BinaryWriter writer = new BinaryWriter(fs);
                 writer.Write(bytes);

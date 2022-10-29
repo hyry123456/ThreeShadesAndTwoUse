@@ -162,7 +162,7 @@ namespace DefferedRender
 		/// <param name="reflectTex">采集到的反射贴图</param>
 		public void DrawSSS(RenderTexture preFrameRenderFinal, int reflectTex)
         {
-			buffer.GetTemporaryRT(sssTargetTex, this.width / 2, this.height / 2,
+			buffer.GetTemporaryRT(sssTargetTex, this.width, this.height,
 				0, FilterMode.Bilinear, useHDR ?
 					RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
 
@@ -179,13 +179,13 @@ namespace DefferedRender
 				Draw(preFrameRenderFinal, sssTargetTex, Pass.SSS);
 			}
 			//进行模糊处理
-			buffer.GetTemporaryRT(bulkLightTempTexId, this.width / 2, this.height / 2,
-			0, FilterMode.Bilinear, useHDR ?
-				RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
+			//buffer.GetTemporaryRT(bulkLightTempTexId, this.width, this.height,
+			//0, FilterMode.Bilinear, useHDR ?
+			//	RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
 
-			Draw(sssTargetTex, bulkLightTempTexId, Pass.BlurHorizontal);
-			Draw(bulkLightTempTexId, sssTargetTex, Pass.BlurVertical);
-			buffer.ReleaseTemporaryRT(bulkLightTempTexId);
+            //Draw(sssTargetTex, bulkLightTempTexId, Pass.BlurHorizontal);
+            //Draw(bulkLightTempTexId, sssTargetTex, Pass.BlurVertical);
+            //buffer.ReleaseTemporaryRT(bulkLightTempTexId);
 		}
 
 		/// <summary>

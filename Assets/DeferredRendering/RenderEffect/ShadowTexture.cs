@@ -95,7 +95,7 @@ namespace DefferedRender
                 Vector2.up,
                 Vector2.one
             };
-
+            mesh.RecalculateTangents();
 
         }
     }

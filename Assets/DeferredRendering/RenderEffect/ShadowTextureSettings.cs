@@ -75,11 +75,9 @@ namespace DefferedRender
                 || topRightPos == null) return;
 
 
-            //Vector3 bL = bottomLeftPos.position - transform.position;
             Vector3 bL = transform.InverseTransformPoint(bottomLeftPos.position);
             shadow.bottomLeftPos = bL;
 
-            //Vector3 bR = bottomRightPos.position - transform.position;
             Vector3 bR = transform.InverseTransformPoint(bottomRightPos.position);
             shadow.bottomRightPos = bR;
 

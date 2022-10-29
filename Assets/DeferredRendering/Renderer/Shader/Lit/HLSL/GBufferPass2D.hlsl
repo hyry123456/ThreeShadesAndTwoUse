@@ -43,7 +43,7 @@ Varyings2D LitPassVertex (Attributes2D input) {
 	output.color = input.color;
 
 	#if defined(_NORMAL_MAP)
-        float3 worldNormal = _2D_Normal;
+        float3 worldNormal = TransformObjectToWorldNormal(_2D_Normal);
         float3 worldTangent = TransformObjectToWorldDir(input.tangentOS.xyz);
         float3 worldBinormal = cross(worldNormal, worldTangent) * input.tangentOS.w;
         //按列排序获得切线空间转世界空间的矩阵,顺便加一个世界坐标位置
