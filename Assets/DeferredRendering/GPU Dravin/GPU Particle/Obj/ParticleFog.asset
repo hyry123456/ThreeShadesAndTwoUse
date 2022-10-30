@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db5976b17e0f743499c63d7bd0f3aad6, type: 3}
   m_Name: ParticleFog
   m_EditorClassIdentifier: 
-  shapeMode: 1
+  shapeMode: 2
   speedMode: 0
   sizeBySpeedMode: 0
   speedRange: {x: -1, y: 1}
