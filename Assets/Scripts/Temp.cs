@@ -7,9 +7,10 @@ public class Temp : MonoBehaviour
     ParticleDrawData drawData = new ParticleDrawData
     {
         //beginPos = Vector3.zero,
-        beginSpeed = Vector3.up,
-        speedMode = SpeedMode.JustBeginSpeed,
-        useGravity = false,
+        beginSpeed = Vector3.down,
+        speedMode = SpeedMode.PositionOutside,
+        cubeOffset = Vector3.one * 50,
+        useGravity = true,
         followSpeed = true,
         radius = 10,
         radian = 6.28f,
@@ -19,7 +20,7 @@ public class Temp : MonoBehaviour
         octave = 4,
         intensity = 30,
         sizeRange =  Vector2.up,
-        colorIndex = ColorIndexMode.HighlightAlphaToAlpha,
+        colorIndex = ColorIndexMode.HighlightToAlpha,
         textureIndex = 0,
         groupCount = 1
     };
@@ -27,6 +28,7 @@ public class Temp : MonoBehaviour
     void Update()
     {
         drawData.beginPos = transform.position;
-        ParticleNoiseFactory.Instance.DrawSphere(drawData);
+        drawData.endPos = transform.position + Vector3.up * 10;
+        ParticleNoiseFactory.Instance.DrawCube(drawData);
     }
 }

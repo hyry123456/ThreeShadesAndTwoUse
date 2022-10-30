@@ -32,8 +32,11 @@ Shader "Custom RP/GPU Pipeline/CS_ParticleNoise"
 
         Pass
         {
-            Blend[_SrcBlend][_DstBlend]
-            ZWrite[_ZWrite]
+            // Blend[_SrcBlend][_DstBlend]
+            // ZWrite[_ZWrite]
+            // ZWrite On
+            Blend SrcAlpha OneMinusSrcAlpha
+            ZWrite Off
             Cull Off
             HLSLPROGRAM
 

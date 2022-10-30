@@ -43,19 +43,19 @@ Material:
     - _StarsCutoff: 0.085
     - _StarsFrequency: 1.45
     - _StarsSpeed: -3
-    - _SunRadius: 0.25
+    - _SunRadius: 0.1
     m_Colors:
-    - _CloudDayColor: {r: 1.0352942, g: 2.4, b: 2.0078433, a: 1}
+    - _CloudDayColor: {r: 0.13862582, g: 0.41509432, b: 0.33495852, a: 1}
     - _CloudNightColor: {r: 0.01, g: 0.2, b: 0.22, a: 1}
-    - _DayBottomColor: {r: 0, g: 0.43, b: 0.54, a: 1}
-    - _DayTopColor: {r: 0, g: 0.43, b: 0.43, a: 1}
+    - _DayBottomColor: {r: 0, g: 0, b: 0, a: 1}
+    - _DayTopColor: {r: 0, g: 0.4573739, b: 0.5188679, a: 1}
     - _HorizonColorDay: {r: 0, g: 0.5, b: 0.62, a: 1}
     - _HorizonColorNight: {r: 0, g: 0.26, b: 0.3, a: 1}
     - _HorizonLightDay: {r: 0, g: 0.5, b: 0.6, a: 1}
     - _HorizonLightNight: {r: 0, g: 0.08, b: 0.1, a: 1}
     - _MoonColor: {r: 1.4980392, g: 0.015686275, b: 0, a: 1}
     - _NightBottomColor: {r: 0, g: 0.1, b: 0.14, a: 1}
-    - _NightTopColor: {r: 0, g: 0.17, b: 0.19, a: 1}
+    - _NightTopColor: {r: 0, g: 0.2037736, b: 0.2264151, a: 1}
     - _StarsSkyColor: {r: 0, g: 1, b: 0.5, a: 1}
-    - _SunColor: {r: 1.4980392, g: 1.4980392, b: 1.4980392, a: 1}
+    - _SunColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

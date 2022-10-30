@@ -1,87 +1,75 @@
 #ifndef CS_PARTICLE_NOISE_PASS
 #define CS_PARTICLE_NOISE_PASS
 
+// struct NoiseParticleData {
+//     float4 random;          //xyz是随机数，w是目前存活时间
+//     int2 index;             //状态标记，x是当前编号，y是是否存活
+//     float3 worldPos;        //当前位置
+//     float4 uvTransData;     //uv动画需要的数据
+//     float interpolation;    //插值需要的数据
+//     float4 color;           //颜色值，包含透明度
+//     float size;             //粒子大小
+//     float3 nowSpeed;        //xyz是当前速度，w是存活时间
+// };
+
 
 #include "CS_ParticleInput.hlsl"
 #include "../../../ShaderLibrary/Fragment.hlsl"
 
-struct ToGeom {
-    float3 worldPos : VAR_POSITION;
-    bool isUse : CHECK;
-    float4 transferData : UV_TRANSFER;
-    float interplation : UV_INTERPELATION;
-    float4 color : COLOR;
-    float size : SIZE;
-    float3 speed : SPEED;
+struct ParticleIndex{
+    uint index : INDEX;
 };
 
-//噪声运行模式的输入结构体
-struct NoisePointToQuad {
-    float3 worldPos;
-    float4 uvTransfer;
-    float uvInterplation;
-    float size;
-    float4 color;
-    float3 speed;
-};
 
 CBUFFER_START(NoiseMaterial)
     float _TexAspectRatio;      //主纹理的宽高比
 CBUFFER_END
 
-ToGeom vert(uint id : SV_InstanceID)
+ParticleIndex vert(uint id : SV_InstanceID)
 {
-    ToGeom o = (ToGeom)0;
-    o.worldPos = _ParticleNoiseBuffer[id].worldPos;
-    if (_ParticleNoiseBuffer[id].index.y < 0)
-        o.isUse = false;
-    else o.isUse = true;
-    o.interplation = _ParticleNoiseBuffer[id].interpolation;
-    o.transferData = _ParticleNoiseBuffer[id].uvTransData;
-    o.color = _ParticleNoiseBuffer[id].color;
-    o.size = _ParticleNoiseBuffer[id].size;
-    o.speed = _ParticleNoiseBuffer[id].nowSpeed;
-    return o;
+    ParticleIndex output;
+    output.index = id;
+    return output;
 }
 
-//噪声的点到面
-void NoiseOutOnePoint(inout TriangleStream<FragInput> tristream, NoisePointToQuad i) 
+//噪声的点到面，也就是大小跟随速度
+void NoiseOutOnePoint(inout TriangleStream<FragInput> tristream, NoiseParticleData particle) 
 {
     FragInput o[4] = (FragInput[4])0;
 
-    float3 worldVer = i.worldPos;
-    float paritcleLen = i.size * _ParticleSize;
+    float3 worldVer = particle.worldPos;
+    float paritcleLen = particle.size / 10.0;
 
     float3 viewDir = normalize( _WorldSpaceCameraPos - worldVer );
-    float3 particleNormal = cross(viewDir, i.speed);
+    float3 particleNormal = cross(viewDir, particle.nowSpeed);
 
     //左下
-    float3 worldPos = worldVer + -i.speed * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
+    float3 worldPos = worldVer + -particle.nowSpeed * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
     o[0].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    o[0].color = i.color;
-    o[0].uv = GetUV(float2(0, 0), i.uvTransfer);
-    o[0].interpolation = i.uvInterplation;
+    o[0].color = particle.color;
+    o[0].uv = GetUV(float2(0, 0), particle.uvTransData);
+    o[0].interpolation = particle.interpolation;
     o[0].positionWS = worldPos;
 
-    worldPos = worldVer + -i.speed * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
+    worldPos = worldVer + -particle.nowSpeed * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
     o[1].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    o[1].color = i.color;
-    o[1].uv = GetUV(float2(1, 0), i.uvTransfer);
-    o[1].interpolation = i.uvInterplation;
+    o[1].color = particle.color;
+    o[1].uv = GetUV(float2(1, 0), particle.uvTransData);
+    o[1].interpolation = particle.interpolation;
     o[1].positionWS = worldPos;
 
-    worldPos = worldVer + i.speed * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
+    worldPos = worldVer + particle.nowSpeed * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
     o[2].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    o[2].color = i.color;
-    o[2].uv = GetUV(float2(0, 1), i.uvTransfer);
-    o[2].interpolation = i.uvInterplation;
+    o[2].color = particle.color;
+    o[2].uv = GetUV(float2(0, 1), particle.uvTransData);
+    o[2].interpolation = particle.interpolation;
     o[2].positionWS = worldPos;
 
-    worldPos = worldVer + i.speed * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
+    worldPos = worldVer + particle.nowSpeed * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
     o[3].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    o[3].color = i.color;
-    o[3].uv = GetUV(float2(1, 1), i.uvTransfer);
-    o[3].interpolation = i.uvInterplation;
+    o[3].color = particle.color;
+    o[3].uv = GetUV(float2(1, 1), particle.uvTransData);
+    o[3].interpolation = particle.interpolation;
     o[3].positionWS = worldPos;
 
     tristream.Append(o[1]);
@@ -96,39 +84,29 @@ void NoiseOutOnePoint(inout TriangleStream<FragInput> tristream, NoisePointToQua
 }
 
 
-void LoadOnePoint(ToGeom IN, inout TriangleStream<FragInput> tristream) {
 
-    #ifdef _FELLOW_SPEED
-        NoisePointToQuad o;
-        o.worldPos = IN.worldPos;
-        o.uvTransfer = IN.transferData;
-        o.uvInterplation = IN.interplation;
-        o.color = IN.color;
-        o.size = IN.size;
-        o.speed = normalize(IN.speed);
-        NoiseOutOnePoint(tristream, o);
-    #else
-        PointToQuad o;
-        o.worldPos = IN.worldPos;
-        o.uvTransfer = IN.transferData;
-        o.uvInterplation = IN.interplation;
-        o.color = IN.color;
-        o.size = IN.size;
-        outOnePoint(tristream, o);
-    #endif
-}
-
-[maxvertexcount(15)]
-void geom(point ToGeom IN[1], inout TriangleStream<FragInput> tristream)
+[maxvertexcount(6)]
+void geom(point ParticleIndex IN[1], inout TriangleStream<FragInput> tristream)
 {
-    if (!IN[0].isUse) return;
-    LoadOnePoint(IN[0], tristream);
+    NoiseParticleData particle = _ParticleNoiseBuffer[IN[0].index];
+    //粒子属于死亡状态
+    if(particle.index.y == 0)
+        return;
+    #ifdef _FELLOW_SPEED
+        NoiseOutOnePoint(tristream, particle);
+    #else
+        outOnePoint(tristream, particle);
+    #endif
+    // NoiseOutOnePoint(tristream, particle);
+    // particle.worldPos = IN[0].index;
 }
 
 float4 frag(FragInput i) : SV_Target
 {
+
     Fragment fragment = GetFragment(i.pos);
     float4 color = GetBaseColor(i);
+    // return i.color * i.color.w;
 
     color.a *= ChangeAlpha(fragment);
 

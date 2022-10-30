@@ -27,15 +27,15 @@ MonoBehaviour:
     scatterRadio: 0.63
     checkDistance: 1000
   bloom:
-    maxIterations: 6
-    downscaleLimit: 30
+    maxIterations: 16
+    downscaleLimit: 1
     bicubicUpsampling: 0
-    threshold: 1.2
-    thresholdKnee: 0.837
+    threshold: 0.8
+    thresholdKnee: 1
     intensity: 0.8
     fadeFireflies: 1
     mode: 0
-    scatter: 0.605
+    scatter: 0.05
   toneMapping:
     mode: 1
   colorAdjustments:

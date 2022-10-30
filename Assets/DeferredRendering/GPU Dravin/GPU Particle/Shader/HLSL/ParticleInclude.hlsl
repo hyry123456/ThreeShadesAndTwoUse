@@ -13,9 +13,9 @@ float4 _Colors[_COUNT];  //颜色计算用的数据
 float4 _Alphas[_COUNT];  //透明度计算用的数据
 float4 _Sizes[_COUNT];  //大小
 
-int _ParticleCount;     //每一组的粒子数量
-float2 _LifeTime;        //存活时间
-int _ArriveIndex;       //到达编号
+// int _ParticleCount;     //每一组的粒子数量
+// float2 _LifeTime;        //存活时间
+// int _ArriveIndex;       //到达编号
 float4 _Time;       //x=time, y=deltaTime, z=fixDeltaTime
 int2 _UVCount;				//x是row，y是column
 

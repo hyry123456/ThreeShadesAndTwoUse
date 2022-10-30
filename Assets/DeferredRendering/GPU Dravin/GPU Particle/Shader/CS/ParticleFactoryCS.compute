@@ -37,7 +37,7 @@ void Particles_PerFrame(uint3 gid : SV_GroupID, uint index : SV_GroupIndex)
 
 
     //开始计算颜色等数据
-    float time_01 = saturate( particle.random.w / particle.liveTime );
+    float time_01 = saturate( particle.random.w / group.lifeTimeRange.y );
     AnimateUVData uvData = AnimateUV(time_01, group.uvCount.xy);
     particle.uvTransData = uvData.uvData;
     particle.interpolation = uvData.interpolation;

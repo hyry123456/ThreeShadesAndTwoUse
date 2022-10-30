@@ -1,6 +1,7 @@
 #ifndef GPUPIPELINE_PARTICLE_NOISE_INCLUDE
 #define GPUPIPELINE_PARTICLE_NOISE_INCLUDE
 
+//单个粒子需要的数据
 struct NoiseParticleData {
     float4 random;          //xyz是随机数，w是目前存活时间
     int2 index;             //状态标记，x是当前编号，y是是否存活
@@ -10,86 +11,117 @@ struct NoiseParticleData {
     float4 color;           //颜色值，包含透明度
     float size;             //粒子大小
     float3 nowSpeed;        //xyz是当前速度，w是存活时间
-    float liveTime;         //最多存活时间
 };
 
-
-struct Par_Initi_Data{
-    float3 beginPos;        //该组粒子运行时间
-    float3 velocityBeg;     //初始速度范围
-    float3 velocityEnd;     //初始速度范围
-    int3 InitEnum;           //初始化判断用的枚举编号根据值
-
-    float2 sphereData;      //初始化球坐标需要的数据
-    float3 cubeRange;       //初始化矩形坐标的范围
-    float4x4 transfer_M;       //初始化矩形坐标的范围
-    float2 lifeTimeRange;   //生存周期的范围
-
-    float3 noiseData;       //噪声调整速度时需要的数据
-
-    int3 outEnum;      //确定输出时算法的枚举
-    float2 smoothRange;       //粒子的大小范围
-
-    uint arriveIndex;
+//一组粒子需要的数据
+struct ParticleGroupsData{
+    float dieTime;        //死亡时间
 };
-
 
 #define _PI 3.1415926
 
 
-RWStructuredBuffer<NoiseParticleData> _ParticleNoiseBuffer;   //输入的buffer
-RWStructuredBuffer<Par_Initi_Data> _InitializeBuffer;         //每一组需要的粒子数
+RWStructuredBuffer<NoiseParticleData> _ParticleNoiseBuffer;     //所有的粒子数据
+RWStructuredBuffer<ParticleGroupsData> _GroupBuffer;            //每一组粒子需要的数据
 
 float _Arc;         //设置的角度，圆形初始化位置时用到该数据
 float _Radius;      //球的半径
-
 float3 _CubeRange;  //立方体范围
-
 
 int _Octave;        //循环的次数，控制生成噪声的细节
 float _Frequency;   //采样变化的频率，也就是对坐标的缩放大小
 float _Intensity;   //影响的强度值
-float4 _SizeBySpeed;    //确定是否大小随时间变化
+
+float4 _LifeTime;   //X释放时间，Y为存活时间，Z和W为贴合初始点时间范围
+int4 _Mode;         //粒子模式, X为位置初始化模式，Y是速度初始化模式，Z是输出模式，W为是否需要物理模拟
+float4x4 _RotateMatrix;   //旋转矩阵，用来确定粒子初始化位置，也就是将模型空间投影到世界空间
+float3 _BeginSpeed;         //初始速度
+float4 _SizeRange;          //大小范围，x，y是粒子大小范围，Z,W是当选中某个轴为大小模式时的映射范围
 
 
 //使用参数方程作为坐标生成的根据
-float3 GetSphereBeginPos(float2 random, float arc, float radius, float4x4 transfer_M) {
-    float u = lerp(0, arc, random.x);
-    float v = lerp(0, arc, random.y);
+float3 GetSphereBeginPos(float2 random) {
     float3 pos;
-    pos.x = radius * cos(u);
-    pos.y = radius * sin(u) * cos(v);
-    pos.z = radius * sin(u) * sin(v);
+    float u, _sin;
+    u = lerp(-_Arc/2, _Arc / 2, random.y);
+    pos.x = (random.x - 0.5) * 2;
+    _sin = sqrt(1.0 - pos.x * pos.x);
+    pos.z = cos(u) * _sin;
+    pos.y = sin(u) * _sin;
+    pos = normalize(pos) * _Radius;
 
-    return mul(transfer_M, float4(pos, 1)).xyz;
+    return mul(_RotateMatrix, float4(pos, 1)).xyz;
 }
 
-float3 GetCubeBeginPos(float3 random, float3 cubeRange, float4x4 transfer_M){
-    float3 begin = -cubeRange/2.0;
-    float3 end = cubeRange/2.0;
+float3 GetCubeBeginPos(float3 random){
+    float3 begin = -_CubeRange/2.0;
+    float3 end = _CubeRange/2.0;
     float3 pos = lerp(begin, end, random);
-    return mul(transfer_M, float4(pos, 1)).xyz;
+    return mul(_RotateMatrix, float4(pos, 1)).xyz;
 }
 
-NoiseParticleData InitialParticle(NoiseParticleData i, Par_Initi_Data init) {
-    switch (init.InitEnum.x){
-        case 0:
-            i.worldPos = init.beginPos;
-            break;
+float3 GetBeginPos(float3 ramdom){
+    switch (_Mode.x){
         case 1:
-            i.worldPos = GetSphereBeginPos(i.random.xy, init.sphereData.x, init.sphereData.y, init.transfer_M);
-            break;
+            return GetSphereBeginPos(ramdom.yx);
         case 2:
-            i.worldPos = GetCubeBeginPos(i.random.xyz, init.cubeRange, init.transfer_M);
-            break;
+            return GetCubeBeginPos(ramdom.yzx);
+        default:
+            return mul(_RotateMatrix, float4(0, 0, 0, 1)).xyz;
     }
-    //改变取值位置，让速度与位置不要这么随机
-    i.nowSpeed = lerp(init.velocityBeg, init.velocityEnd, i.random.yzx);
-    i.random.w = 0;
-    return i;
+
 }
 
+//获得初始速度
+float3 GetBeginSpeed(float random, float3 beginPos){
 
+    float speed = length(_BeginSpeed) * random;    //根据速度大小确定一个随机速度
+    float3 normal = normalize(_BeginSpeed);
+    float3 direct = normalize(beginPos - mul(_RotateMatrix, float4(0, 0, 0, 1)).xyz);
+    switch(_Mode.y){
+        case 1:     //速度是法线以及大小，在粒子位置生成一个垂直于法线且是向外的力度
+            return normalize( (direct - normal * dot(direct, normal)) ) * speed;
+        case 2:     //在粒子位置生成一个垂直于法线且是向内的力度
+            return -normalize( (direct - normal * dot(direct, normal)) ) * speed;
+        case 3:     //朝向起始位置的速度，也就是往中间汇集
+            return -direct * speed;
+        case 4:     //离开起始位置的速度，也就是从中间往外面跑
+            return direct * speed;
+        default: //默认模式,传入速度就是初始化速度
+            return _BeginSpeed;
+    }
+}
+
+//初始化粒子
+void InitialParticle(inout NoiseParticleData input) {
+    input.worldPos = GetBeginPos(input.random.xyz);         //初始化坐标
+
+    //改变取值位置，让速度与位置不要这么随机
+    float random = (input.random.x + input.random.y + input.random.z)/3.0;
+    input.nowSpeed = GetBeginSpeed(random, input.worldPos);     //初始化速度
+    input.random.w = 0;             //初始化时间
+    input.index.y = 1;              //标记为使用
+}
+
+//更新粒子
+void UpdateParticle(inout NoiseParticleData particle, int groupIndex, int originIndex, float parLiveTime){
+    // switch(groupIndex){
+    //     case 0:
+    //         break;
+    //     default:
+    //         //进行贴近
+    //         if(parLiveTime < _NearData.x){
+    //             NoiseParticleData origin = _ParticleNoiseBuffer[originIndex];
+    //             particle.worldPos = lerp(particle.worldPos, origin.worldPos, _NearData.y);
+    //         }
+    //         break;
+    // }
+
+
+    particle.worldPos += particle.nowSpeed * _Time.y;      //更新位置
+    particle.random.w += _Time.y;
+
+}
 
 //生成随机方向
 float3 hash3d(float3 input) {
@@ -181,37 +213,46 @@ float3 CurlNoise3D(float3 pos, int octave)
     return float3(a, b, c);
 }
 
-NoiseParticleData UpdataPosition(NoiseParticleData i, Par_Initi_Data init){
-    i.worldPos += i.nowSpeed * _Time.y;
-    i.random.w += _Time.y;
-    return i;
+// NoiseParticleData UpdataPosition(NoiseParticleData i, Par_Initi_Data init){
+//     i.worldPos += i.nowSpeed * _Time.y;
+//     i.random.w += _Time.y;
+//     return i;
+// }
+
+// NoiseParticleData UpdataSpeed(NoiseParticleData i, Par_Initi_Data init){
+//     i.nowSpeed += CurlNoise3D(i.worldPos * init.noiseData.y, (int)init.noiseData.x) * init.noiseData.z * _Time.z;
+//     return i;
+// }
+
+void UpdataSpeed(inout NoiseParticleData input){
+    input.nowSpeed += CurlNoise3D(input.worldPos * input.random.xyz * _Frequency, _Octave) * _Intensity * _Time.z;
 }
 
-NoiseParticleData UpdataSpeed(NoiseParticleData i, Par_Initi_Data init){
-    i.nowSpeed += CurlNoise3D(i.worldPos * init.noiseData.y, (int)init.noiseData.x) * init.noiseData.z * _Time.z;
-    return i;
-}
-
-NoiseParticleData OutParticle(NoiseParticleData i, Par_Initi_Data init){
-    float time_01 = saturate( i.random.w / i.liveTime );
+void OutParticle(float parLiveTime, inout NoiseParticleData particle){
+    //开始计算颜色等数据
+    float time_01 = saturate( parLiveTime / _LifeTime.y );
     AnimateUVData uvData = AnimateUV(time_01);
-    i.uvTransData = uvData.uvData;
-    i.interpolation = uvData.interpolation;
-    i.color = float4(LoadColor(time_01), LoadAlpha(time_01));
-    switch (init.outEnum.x) {
+    particle.uvTransData = uvData.uvData;
+    particle.interpolation = uvData.interpolation;
+    particle.color = float4(LoadColor(time_01), LoadAlpha(time_01));
+    // particle.color = time_01;
+
+    //大小
+    float size01;
+    switch (_Mode.z) {      //枚举大小模式
     case 1 :
-        i.size = LoadSize(smoothstep(init.smoothRange.x, init.smoothRange.y, abs(i.nowSpeed.x)));
+        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.x)));
         break;
     case 2 :
-        i.size = LoadSize(smoothstep(init.smoothRange.x, init.smoothRange.y, abs(i.nowSpeed.y)));
+        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.y)));
         break;
     case 3:
-        i.size = LoadSize(smoothstep(init.smoothRange.x, init.smoothRange.y, abs(i.nowSpeed.z)));
+        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.z)));
         break;
     default :
-        i.size = LoadSize(time_01);
+        size01 = LoadSize(time_01);
         break;
     }
-    return i;
+    particle.size = lerp(_SizeRange.x, _SizeRange.y, size01);
 }
 #endif

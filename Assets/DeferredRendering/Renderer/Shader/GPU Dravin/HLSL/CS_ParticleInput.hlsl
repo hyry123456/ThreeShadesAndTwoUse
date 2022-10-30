@@ -36,18 +36,6 @@ int _RowCount;
 int _ColCount;
 float _ParticleSize;
 
-
-//CS传入的结构体
-struct ParticleData {
-    float4 random;          //随机方向以及时间
-    int2 index;             //粒子编号以及是否显示
-    float3 worldPos;
-    float4 uvTransData;     //uv动画需要的数据
-    float interpolation;    //动画插值
-    float4 color;           //当前颜色值，包含透明度
-    float size;             //当前粒子大小
-};
-
 struct NoiseParticleData {
     float4 random;          //xyz是随机数，w是目前存活时间
     int2 index;             //状态标记，x是当前编号，y是是否存活
@@ -57,21 +45,10 @@ struct NoiseParticleData {
     float4 color;           //颜色值，包含透明度
     float size;             //粒子大小
     float3 nowSpeed;        //xyz是当前速度，w是存活时间
-    float liveTime;         //最多存活时间
 };
 
-StructuredBuffer<ParticleData> _ParticleBuffer;     //计算的根据buffer
 StructuredBuffer<NoiseParticleData> _ParticleNoiseBuffer;         //输入的buffer
 
-
-//顶点生成平面需要赋值的数据
-struct PointToQuad {
-    float3 worldPos;
-    float4 uvTransfer;
-    float uvInterplation;
-    float size;
-    float4 color;
-};
 
 struct FragInput
 {
@@ -96,49 +73,39 @@ float4 GetUV(float2 uv, float4 uvTransData) {
 }
 
 //封装点生成面
-void outOnePoint(inout TriangleStream<FragInput> tristream, PointToQuad i) 
+void outOnePoint(inout TriangleStream<FragInput> tristream, NoiseParticleData particle) 
 {
     FragInput o[4] = (FragInput[4])0;
 
-    float3 worldVer = i.worldPos;
-    // float3 worldVer = 0;
-    float paritcleLen = i.size * _ParticleSize;
-    // float paritcleLen = 10;
+    float3 worldVer = particle.worldPos;
+    float paritcleLen = particle.size;
 
     float3 worldPos = worldVer + -unity_MatrixV[0].xyz * paritcleLen + -unity_MatrixV[1].xyz * paritcleLen;
     o[0].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    // o[0].time = i.time;
-    o[0].color = i.color;
-    o[0].uv = GetUV(float2(0, 0), i.uvTransfer);
-    o[0].interpolation = i.uvInterplation;
-    // o[0].temData = i.size;
+    o[0].color = particle.color;
+    o[0].uv = GetUV(float2(0, 0), particle.uvTransData);
+    o[0].interpolation = particle.interpolation;
 
     worldPos = worldVer + UNITY_MATRIX_V[0].xyz * -paritcleLen
         + UNITY_MATRIX_V[1].xyz * paritcleLen;
     o[1].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    // o[1].time = i.time;
-    o[1].color = i.color;
-    o[1].uv = GetUV(float2(1, 0), i.uvTransfer);
-    o[1].interpolation = i.uvInterplation;
-    // o[1].temData = i.size;
+    o[1].color = particle.color;
+    o[1].uv = GetUV(float2(1, 0), particle.uvTransData);
+    o[1].interpolation = particle.interpolation;
 
     worldPos = worldVer + UNITY_MATRIX_V[0].xyz * paritcleLen
         + UNITY_MATRIX_V[1].xyz * -paritcleLen;
     o[2].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    // o[2].time = i.time;
-    o[2].color = i.color;
-    o[2].uv = GetUV(float2(0, 1), i.uvTransfer);
-    o[2].interpolation = i.uvInterplation;
-    // o[2].temData = i.size;
+    o[2].color = particle.color;
+    o[2].uv = GetUV(float2(0, 1), particle.uvTransData);
+    o[2].interpolation = particle.interpolation;
 
     worldPos = worldVer + UNITY_MATRIX_V[0].xyz * paritcleLen
         + UNITY_MATRIX_V[1].xyz * paritcleLen;
     o[3].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-    // o[3].time = i.time;
-    o[3].color = i.color;
-    o[3].uv = GetUV(float2(1, 1), i.uvTransfer);
-    o[3].interpolation = i.uvInterplation;
-    // o[3].temData = i.size;
+    o[3].color = particle.color;
+    o[3].uv = GetUV(float2(1, 1), particle.uvTransData);
+    o[3].interpolation = particle.interpolation;
 
     tristream.Append(o[1]);
     tristream.Append(o[2]);

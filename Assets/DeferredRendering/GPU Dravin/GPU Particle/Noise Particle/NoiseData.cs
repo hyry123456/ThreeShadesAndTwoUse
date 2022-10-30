@@ -13,7 +13,6 @@ namespace DefferedRender
         public Vector4 color;           //颜色值，包含透明度
         public float size;             //粒子大小
         public Vector3 nowSpeed;        //xyz是当前速度，w是存活时间
-        public float liveTime;         //最多存活时间
     };
 
 
@@ -51,37 +50,15 @@ namespace DefferedRender
         Cube = 2
     }
 
+
     /// <summary>   /// 用来控制单组噪声粒子的数据结构体    /// </summary>
     [System.Serializable]
-    public class NoiseData 
+    public class NoiseData
     {
-        //初始化
-        public InitialShapeMode shapeMode = InitialShapeMode.Pos;
+        //该节点所在位置
         public Transform position;
-        [Range(0.01f, 6.18f)]
-        public float arc = 0.1f;              //粒子生成范围
-        public float radius = 1;           //圆大小
-        public Vector3 cubeRange;          //矩形大小
-        public Vector3 velocityBegin;      //速度范围
-        public Vector3 velocityEnd;
-        public Vector2 lifeTime = new Vector2(0.01f, 1);
-
-        //更新
-        [Range(1, 8)]
-        public int octave = 1;
-        public float frequency = 1;
-        [Min(0.1f)]
-        public float intensity = 0.5f;
-
-        //输出粒子
-        public bool isSizeBySpeed;
-        public SizeBySpeedMode sizeBySpeedMode = SizeBySpeedMode.TIME;
-        public Vector2 smoothRange = Vector2.up;
-
-        //设置
-        public bool isPhysical;     //物理粒子
+        public NoisePerNodeData perNodeData;
     }
-
 
 
     #region 粒子工厂需要的数据

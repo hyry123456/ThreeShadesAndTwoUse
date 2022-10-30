@@ -157,7 +157,7 @@ void InitialFactory(ParticleNodeData origin, inout NoiseParticleData particle){
             particle.nowSpeed = direct * speed;
             break;
         default: //默认模式,传入速度就是初始化速度
-            particle.nowSpeed = origin.beginSpeed * particle.random.xyz;
+            particle.nowSpeed = origin.beginSpeed;
             break;
     }
 
@@ -167,7 +167,6 @@ void InitialFactory(ParticleNodeData origin, inout NoiseParticleData particle){
     particle.index = uint2(origin.initEnum.z, 1);
     //存活时间与最大生存时间初始化
     particle.random.w = 0;  //存活时间初始化
-    particle.liveTime = origin.lifeTimeRange.y;
 }
 
 void UpdateFactory(inout NoiseParticleData particle){
