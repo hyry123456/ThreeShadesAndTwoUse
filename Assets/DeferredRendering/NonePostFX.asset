@@ -15,7 +15,7 @@ MonoBehaviour:
   postFXShader: {fileID: 4800000, guid: 6c3a07466ffb3c7469bfd1e374913cbb, type: 3}
   colorLUTResolution: 32
   ssrSetting:
-    useSSR: 0
+    useSSR: 1
     rayMarchingSetp: 36
     marchSetpSize: 10
     maxMarchDistance: 500

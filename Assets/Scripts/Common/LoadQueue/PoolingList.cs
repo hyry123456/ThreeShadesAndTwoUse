@@ -1,10 +1,13 @@
+using UnityEngine;
 namespace Common
 {
+    [System.Serializable]
     /// <summary>
     /// 池化数组案例，较快的插入删除的数组
     /// </summary>
     public class PoolingList<T>
     {
+        [SerializeField]
         private T[] list = new T[1];
         private int size = 0;
 

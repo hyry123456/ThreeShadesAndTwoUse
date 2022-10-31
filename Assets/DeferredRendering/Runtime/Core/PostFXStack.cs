@@ -177,15 +177,23 @@ namespace DefferedRender
 				buffer.SetGlobalFloat(depthThicknessId, ssr.depthThickness);
 				//绘制实时反射
 				Draw(preFrameRenderFinal, sssTargetTex, Pass.SSS);
-			}
+
+                buffer.GetTemporaryRT(bulkLightTempTexId, this.width, this.height,
+                0, FilterMode.Bilinear, useHDR ?
+                    RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
+
+                Draw(sssTargetTex, bulkLightTempTexId, Pass.BlurHorizontal);
+                Draw(bulkLightTempTexId, sssTargetTex, Pass.BlurVertical);
+                buffer.ReleaseTemporaryRT(bulkLightTempTexId);
+            }
 			//进行模糊处理
 			//buffer.GetTemporaryRT(bulkLightTempTexId, this.width, this.height,
 			//0, FilterMode.Bilinear, useHDR ?
 			//	RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
 
-            //Draw(sssTargetTex, bulkLightTempTexId, Pass.BlurHorizontal);
-            //Draw(bulkLightTempTexId, sssTargetTex, Pass.BlurVertical);
-            //buffer.ReleaseTemporaryRT(bulkLightTempTexId);
+			//Draw(sssTargetTex, bulkLightTempTexId, Pass.BlurHorizontal);
+			//Draw(bulkLightTempTexId, sssTargetTex, Pass.BlurVertical);
+			//buffer.ReleaseTemporaryRT(bulkLightTempTexId);
 		}
 
 		/// <summary>

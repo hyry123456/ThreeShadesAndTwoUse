@@ -25,10 +25,13 @@ public class Temp : MonoBehaviour
         groupCount = 1
     };
 
+    public int indexX, indexY;
+
     void Update()
     {
-        drawData.beginPos = transform.position;
-        drawData.endPos = transform.position + Vector3.up * 10;
-        ParticleNoiseFactory.Instance.DrawCube(drawData);
+        //drawData.beginPos = transform.position;
+        //drawData.endPos = transform.position + Vector3.up * 10;
+        //ParticleNoiseFactory.Instance.DrawCube(drawData);
+
     }
 }

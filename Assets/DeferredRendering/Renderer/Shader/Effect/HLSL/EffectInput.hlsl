@@ -25,6 +25,7 @@ UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
 	UNITY_DEFINE_INSTANCED_PROP(float4, _FireColor)
 	UNITY_DEFINE_INSTANCED_PROP(float4, _PaperTex_ST)
 	UNITY_DEFINE_INSTANCED_PROP(float4, _NoiseTex_ST)
+	UNITY_DEFINE_INSTANCED_PROP(float4, _MainTex_ST)
 	UNITY_DEFINE_INSTANCED_PROP(float4, _WaveSpeed)
 	UNITY_DEFINE_INSTANCED_PROP(float, _FireBegin)
 	UNITY_DEFINE_INSTANCED_PROP(float, _BlendBegin)
@@ -39,6 +40,12 @@ float2 TransformPaperUV(float2 uv){
 	return uv * baseST.xy + baseST.zw;
 }
 
+float2 TransformBaseUV(float2 uv){
+	float4 baseST = INPUT_PROP(_MainTex_ST);
+	return uv * baseST.xy + baseST.zw;
+}
+
+
 float2 TransformNoiseUV(float2 uv){
 	float4 noiseST = INPUT_PROP(_NoiseTex_ST);
 	return uv * noiseST.xy + noiseST.zw;
@@ -48,6 +55,10 @@ float4 GetMain (float2 uv) {
 	float4 map = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
 	float4 font = INPUT_PROP(_FontCol);
 	return float4(font.xyz, map.w);
+}
+
+float4 GetBase(float2 uv){
+	return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
 }
 
 float3 GetEmission () {

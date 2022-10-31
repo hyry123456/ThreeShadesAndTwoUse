@@ -15,19 +15,19 @@ MonoBehaviour:
   postFXShader: {fileID: 4800000, guid: 6c3a07466ffb3c7469bfd1e374913cbb, type: 3}
   colorLUTResolution: 32
   ssrSetting:
-    useSSR: 0
+    useSSR: 1
     rayMarchingSetp: 36
     marchSetpSize: 18
     maxMarchDistance: 500
     depthThickness: 1
   bulkLight:
-    useBulkLight: 1
+    useBulkLight: 0
     shrinkRadio: 288
     circleCount: 10
     scatterRadio: 0.63
     checkDistance: 1000
   bloom:
-    maxIterations: 16
+    maxIterations: 8
     downscaleLimit: 1
     bicubicUpsampling: 0
     threshold: 0.8
