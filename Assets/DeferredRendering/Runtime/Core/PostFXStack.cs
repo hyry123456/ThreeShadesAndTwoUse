@@ -31,6 +31,12 @@ namespace DefferedRender
 			CaculateGray,
 			FXAA,
 			CopyDepth,
+			CameraStickWater,
+			CircleOfConfusion,
+			PreFilter,
+			Bokeh,
+			PostFilter,
+			Combine,
 		}
 
         const string bufferName = "PostFX";
@@ -52,7 +58,8 @@ namespace DefferedRender
             bloomResultId = Shader.PropertyToID("_BloomResult"),
             bloomThresholdId = Shader.PropertyToID("_BloomThreshold"),
             fxSourceId = Shader.PropertyToID("_PostFXSource"),
-            fxSource2Id = Shader.PropertyToID("_PostFXSource2");
+            fxSource2Id = Shader.PropertyToID("_PostFXSource2"),
+            fxSource3Id = Shader.PropertyToID("_PostFXSource3");
 
 		int
 			colorGradingLUTId = Shader.PropertyToID("_ColorGradingLUT"),
@@ -73,15 +80,14 @@ namespace DefferedRender
 			bulkLightCheckMaxDistanceId = Shader.PropertyToID("_BulkLightCheckMaxDistance"),
 
 
-			//fogColorsId = Shader.PropertyToID("_Colors"),
-
 			finalTempTexId = Shader.PropertyToID("_FinalTempTexure"),
 			fxaaTempTexId = Shader.PropertyToID("_FXAATempTexture"),
 			contrastThresholdId = Shader.PropertyToID("_ContrastThreshold"),
 			relativeThresholdId = Shader.PropertyToID("_RelativeThreshold"),
 			subpixelBlending = Shader.PropertyToID("_SubpixelBlending"),
 
-			detactiveViewTexId = Shader.PropertyToID("_DetactiveViewTexture");	//临时目标纹理
+			stickWaterDataId = Shader.PropertyToID("_StickWaterData");
+
 
 
 
@@ -140,7 +146,15 @@ namespace DefferedRender
                 DrawBulkLight(sourceId);
             }
 
-            if (DoBloom(sourceId))
+            if (settings.StickWater.useStickWater)
+            {
+				DoCameraStickWater(sourceId);
+            }
+
+			if(settings.DepthOfField.useDepthOfField)
+				DepthOfField(sourceId);
+
+			if (DoBloom(sourceId))
 			{
                 DoColorGradingAndToneMapping(bloomResultId);
                 buffer.ReleaseTemporaryRT(bloomResultId);
@@ -201,8 +215,6 @@ namespace DefferedRender
 		/// </summary>
 		public void DrawGBufferFinal(int targetTexId)
 		{
-
-
             Draw(0, targetTexId, Pass.GBufferFinal);
 			buffer.ReleaseTemporaryRT(sssTargetTex);
 			ExecuteBuffer();
@@ -225,9 +237,9 @@ namespace DefferedRender
             buffer.GetTemporaryRT(bulkLightTempTexId, width, height, 0, FilterMode.Bilinear, format);
 			buffer.GetTemporaryRT(bulkLightDepthTexId, width, height, 32, 
 				FilterMode.Point, RenderTextureFormat.Depth);
-			//清除Target的颜色
-			Draw(Texture2D.blackTexture, bulkLightTargetTexId, Pass.Copy);
-			Draw(depthId, bulkLightDepthTexId, Pass.CopyDepth);
+            //清除Target的颜色
+            Draw(Texture2D.blackTexture, bulkLightTargetTexId, Pass.Copy);
+            Draw(depthId, bulkLightDepthTexId, Pass.CopyDepth);
             //Draw(0, bulkLightTargetTexId, Pass.BulkLight);      //获得Bulk Light强度图
             buffer.SetRenderTarget(
 				bulkLightTargetTexId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
@@ -254,44 +266,6 @@ namespace DefferedRender
 			buffer.EndSample("BulkLight");
 			ExecuteBuffer();
 		}
-
-		/// <summary>		/// 渲染雾效		/// </summary>
-		//public void DrawFog(int soure)
-  //      {
-		//	buffer.BeginSample("Fog");
-		//	FogSetting fog = settings.Fog;
-		//	//settings.Fog
-		//	GradientColorKey[] gradientColorKeys = fog.colors.colorKeys;
-		//	Vector4[] colors = new Vector4[gradientColorKeys.Length];
-		//	for (int i = 0; i < gradientColorKeys.Length; i++)
-		//	{
-		//		colors[i] = gradientColorKeys[i].color;
-		//		colors[i].w = gradientColorKeys[i].time;
-		//	}
-		//	buffer.SetGlobalVectorArray(fogColorsId, colors);
-
-		//	buffer.SetGlobalFloat(fogMaxDepth, fog.fogMaxDepth);
-		//	buffer.SetGlobalFloat(fogMinDepth, fog.fogMinDepth);
-		//	buffer.SetGlobalFloat(fogDepthFallOff, fog.fogDepthFallOff);
-
-		//	buffer.SetGlobalFloat(fogMaxHight, fog.fogMaxHeight);
-		//	buffer.SetGlobalFloat(fogMinHight, fog.fogMinHeight);
-		//	buffer.SetGlobalFloat(fogPosYFallOff, fog.fogPosYFallOff);
-
-		//	RenderTextureFormat format = (useHDR) ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default;
-
-		//	buffer.GetTemporaryRT(bulkLightTempTexId, this.width, this.height,
-		//		0, FilterMode.Bilinear, format);
-
-		//	Draw(soure, bulkLightTempTexId, Pass.Fog);
-
-		//	Draw(bulkLightTempTexId, soure, Pass.Copy);
-
-		//	buffer.ReleaseTemporaryRT(bulkLightTempTexId);
-
-		//	buffer.EndSample("Fog");
-		//	ExecuteBuffer();
-		//}
 
 		/// <summary>		/// 对输出到最终图像的位置进行抗锯齿		/// </summary>
 		public void DrawFXAAInFinal(int soure)
@@ -489,58 +463,61 @@ namespace DefferedRender
 			buffer.ReleaseTemporaryRT(colorGradingLUTId);
 		}
 
+		/// <summary>/// 绘制一个屏幕粘水珠效果/// </summary>
+		void DoCameraStickWater(int sourceId)
+        {
+			buffer.GetTemporaryRT(bulkLightTempTexId, width, height, 0, FilterMode.Bilinear,
+				(useHDR) ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
+			CameraStickWater stickWater = settings.StickWater;
+			buffer.SetGlobalVector(stickWaterDataId,
+				new Vector4(stickWater.rainAmount, stickWater.fixedDroplet,
+				stickWater.dropletSize, stickWater.speed));
+			Draw(sourceId, bulkLightTempTexId, Pass.CameraStickWater);
+			Draw(bulkLightTempTexId, sourceId, Pass.Copy);
 
-		//static ShaderTagId
-		//	detactiveShaderTagId = new ShaderTagId("DetavtiveView");
+			buffer.ReleaseTemporaryRT(bulkLightTempTexId);
+        }
 
-		///// <summary>/// 绘制侦探视觉，对特殊物体进行绘制/// </summary>
-		//void DrawDetectiveView(int sourceId)
-  //      {
-		//	buffer.BeginSample("Draw DetectiveView");
-		//	RenderTextureFormat format = useHDR ?
-		//		RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default;
-		//	buffer.GetTemporaryRT(detactiveViewTexId, this.width, this.height,
-		//		0, FilterMode.Bilinear, format);
+		void DepthOfField(int sourceId)
+        {
+			buffer.BeginSample("DepthOfField");
+			DepthOfFieldSetting depthOfField = settings.DepthOfField;
+			buffer.SetGlobalFloat("_BokehRadius", depthOfField.bokehRadius);
+			buffer.SetGlobalFloat("_FocusDistance", depthOfField.focusDistance);
+			buffer.SetGlobalFloat("_FocusRange", depthOfField.focusRange);
+			buffer.GetTemporaryRT(bulkLightTempTexId, width, height, 0,
+				FilterMode.Bilinear, RenderTextureFormat.RHalf);
 
-		//	//设置该摄像机的物体排序模式，目前是渲染普通物体，因此用一般排序方式
-		//	var sortingSettings = new SortingSettings(camera)
-		//	{
-		//		criteria = SortingCriteria.CommonOpaque
-		//	};
-		//	//第一次渲染只绘制GBuffer，且GBuffer仅渲染非透明
-		//	var drawingSettings = new DrawingSettings(
-		//		detactiveShaderTagId, sortingSettings
-		//	)
-		//	{
-		//		enableDynamicBatching = true,
-		//		enableInstancing = true,
-		//	};
-		//	var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
+			int widthT = width / 2;
+			int heightT = height / 2;
+			RenderTextureFormat format = (useHDR) ? RenderTextureFormat.DefaultHDR :
+				RenderTextureFormat.Default;
+			buffer.GetTemporaryRT(bulkLightTemp2TexId, widthT, heightT, 0,
+				FilterMode.Bilinear, format);
+			buffer.GetTemporaryRT(fxaaTempTexId, widthT, heightT, 0,
+				FilterMode.Bilinear, format);
 
-		//	Draw(sourceId, detactiveViewTexId, Pass.Copy);
+			buffer.GetTemporaryRT(finalTempTexId, width, height, 0,
+				FilterMode.Bilinear, format);
 
-		//	buffer.SetRenderTarget(detactiveViewTexId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
-		//		depthId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store);
+			buffer.SetGlobalTexture(fxSource2Id, bulkLightTempTexId);
+			buffer.SetGlobalTexture(fxSource3Id, bulkLightTemp2TexId);
 
-		//	//float blendRadio = 1.0f - Mathf.Clamp01(settings.Fog.fogMaxDepth / 0.1f);
+			//Graphics.Blit(sourceId, fxSourceId, dofMaterial, circleOfConfusionPass);     //确定要绘制的范围
+			Draw(sourceId, bulkLightTempTexId, Pass.CircleOfConfusion);
+			Draw(sourceId, bulkLightTemp2TexId, Pass.PreFilter);
+			Draw(bulkLightTemp2TexId, fxaaTempTexId, Pass.Bokeh);
+			Draw(fxaaTempTexId, bulkLightTemp2TexId, Pass.PostFilter);
 
-		//	//buffer.SetGlobalFloat("_BlendRadio", blendRadio);
+			Draw(sourceId, finalTempTexId, Pass.Combine);
+			Draw(finalTempTexId, sourceId, Pass.Copy);
 
-		//	ExecuteBuffer();
-
-		//	//进行渲染的执行方法
-		//	context.DrawRenderers(
-		//		cullingResults, ref drawingSettings, ref filteringSettings
-		//	);
-
-		//	//复制到真实纹理中
-		//	Draw(detactiveViewTexId, sourceId, Pass.Copy);
-		//	buffer.ReleaseTemporaryRT(detactiveViewTexId);
-
-		//	buffer.EndSample("Draw DetectiveView");
-
-		//}
-
+			buffer.ReleaseTemporaryRT(bulkLightTempTexId);
+			buffer.ReleaseTemporaryRT(bulkLightTemp2TexId);
+			buffer.ReleaseTemporaryRT(fxaaTempTexId);
+			buffer.ReleaseTemporaryRT(finalTempTexId);
+			buffer.EndSample("DepthOfField");
+		}
 
 		/// <summary>	/// 颜色调整参数赋值	/// </summary>
 		void ConfigureColorAdjustments()

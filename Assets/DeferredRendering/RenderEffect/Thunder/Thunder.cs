@@ -18,12 +18,26 @@ namespace DefferedRender
         [SerializeField]
         List<ThunderNode> thunderNodes;
 
-        public int textureSize = 512;
+        public int textureSize = 256;
         public RenderTexture renderTexture;
         public ComputeShader compute;
         ComputeBuffer buffer;
-        int kernel_Thunder;
+        int kernel_Thunder, kernel_BilateralFilter;
         public MeshRenderer thunderRender;
+        [Range(0, 1)]
+        public float bilaterFilterFactor = 0.7f;
+        [Range(0, 5)]
+        public int blurRadius = 1;
+
+        //当前等待时间
+        float currentTime;
+        [Range(0.0001f, 5)]
+        public float maxWaitTime = 3;      //最大等待时间
+        [Range(0.0001f, 1f)]
+        public float maxLuminanceSusTime = 0.3f;    //最大亮度持续时间
+        float waitTime;             //这次的等待时间
+        [Min(0.0001f)]
+        public float thunderSustainTime = 0.8f;
 
         private Material setMat;
 
@@ -43,6 +57,7 @@ namespace DefferedRender
             renderTexture.Create();
             buffer = new ComputeBuffer(81, Marshal.SizeOf<ThunderNode>());
             kernel_Thunder = compute.FindKernel("Thunder");
+            kernel_BilateralFilter = compute.FindKernel("BilateralFilter");
             setMat = thunderRender.material;
             setMat.SetTexture("_MainTex", renderTexture);
 
@@ -67,6 +82,14 @@ namespace DefferedRender
             compute.SetBuffer(kernel_Thunder, "_ThundersBuffer", buffer);
             compute.SetInt("_TextureSizes", textureSize);
             compute.Dispatch(kernel_Thunder, 1, 1, 1);
+
+            compute.SetTexture(kernel_BilateralFilter, "Result", renderTexture);
+            compute.SetFloat("_BilaterFilterFactor", bilaterFilterFactor);
+            compute.SetInts("_BlurRadius", new int[] { blurRadius, 0 });
+            compute.Dispatch(kernel_BilateralFilter, textureSize / 32 + 1, textureSize / 32 + 1, 1);
+            compute.SetInts("_BlurRadius", new int[] { 0, blurRadius });
+            compute.Dispatch(kernel_BilateralFilter, textureSize / 32 + 1, textureSize / 32 + 1, 1);
+
         }
 
         private void OnDestroy()
@@ -75,14 +98,7 @@ namespace DefferedRender
             buffer.Release();
         }
 
-        [SerializeField]
-        //当前等待时间
-        float currentTime;
-        [Range(0.0001f, 5)]
-        public float maxWaitTime = 3;      //最大等待时间
-        float waitTime;             //这次的等待时间
-        [Min(0.0001f)]
-        public float thunderSustainTime = 1;
+
 
         /// <summary>  /// 等待闪电   /// </summary>
         private bool WaitThunder()
@@ -103,8 +119,8 @@ namespace DefferedRender
             //清除纹理
             Graphics.Blit(Texture2D.blackTexture, renderTexture);
             thunderNodes.Clear();       //情空当前数据
-            origin.end = Vector2.right * 0.8f + Vector2.up * Random.Range(-0.5f, 0.5f);
-            origin.begin = Vector2.up * Random.Range(-0.3f, 0.3f);
+            origin.end = Vector2.right * 0.8f + Vector2.up * Random.Range(-0.3f, 0.3f);
+            origin.begin = Vector2.up * Random.Range(-0.5f, 0.5f);
             thunderNodes.Add(origin);
         }
 
@@ -168,11 +184,12 @@ namespace DefferedRender
             float midTime = thunderSustainTime / 2.0f;
             if(currentTime < midTime)   //显示阶段
             {
-                setMat.SetFloat("_Cutoff", Mathf.Lerp(0.5f, 0, currentTime / midTime));
+                setMat.SetFloat("_Cutoff", Mathf.Lerp(0.6f, 0, currentTime / midTime));
             }
-            else if(currentTime < thunderSustainTime)   //消失阶段
+            else if(currentTime < thunderSustainTime + maxLuminanceSusTime)   //消失阶段
             {
-                setMat.SetFloat("_Cutoff", Mathf.Lerp(0f, 0.5f, (currentTime - midTime) / midTime));
+                setMat.SetFloat("_Cutoff", Mathf.Lerp(0f, 0.6f, 
+                    (currentTime - midTime - maxLuminanceSusTime) / midTime));
             }
             else        //停止阶段
             {

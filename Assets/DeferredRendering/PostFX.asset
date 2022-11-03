@@ -15,8 +15,8 @@ MonoBehaviour:
   postFXShader: {fileID: 4800000, guid: 6c3a07466ffb3c7469bfd1e374913cbb, type: 3}
   colorLUTResolution: 32
   ssrSetting:
-    useSSR: 1
-    rayMarchingSetp: 36
+    useSSR: 0
+    rayMarchingSetp: 72
     marchSetpSize: 18
     maxMarchDistance: 500
     depthThickness: 1
@@ -27,13 +27,13 @@ MonoBehaviour:
     scatterRadio: 0.63
     checkDistance: 1000
   bloom:
-    maxIterations: 8
+    maxIterations: 7
     downscaleLimit: 1
     bicubicUpsampling: 0
     threshold: 0.8
     thresholdKnee: 1
     intensity: 0.8
-    fadeFireflies: 1
+    fadeFireflies: 0
     mode: 0
     scatter: 0.05
   toneMapping:
@@ -56,6 +56,15 @@ MonoBehaviour:
     contrastThreshold: 0.0665
     relativeThreshold: 0.217
     subpixelBlending: 1
-    lowQuality: 0
-  detectiveView:
-    useDetective: 0
+    lowQuality: 1
+  stickWater:
+    rainAmount: 0.067
+    fixedDroplet: 0.089
+    dropletSize: 0.045
+    speed: 0.5
+    useStickWater: 0
+  depthOfField:
+    focusDistance: 34.1
+    focusRange: 100
+    bokehRadius: 6.33
+    useDepthOfField: 0
