@@ -208,6 +208,7 @@ namespace DefferedRender
             {
                 compute.SetBuffer(kernel_PerFixCollsion, "_ParticleNoiseBuffer", particleBuffer);
                 compute.SetBuffer(kernel_PerFixCollsion, "_CollsionBuffer", collsionBuffer);
+                compute.SetFloat("_CollsionScale", noiseData.collsionScale);
                 compute.SetInt("_CollsionData", collsions.Length);
             }
             else

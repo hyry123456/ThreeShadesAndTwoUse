@@ -23,6 +23,8 @@ namespace DefferedRender
         public Vector3 velocityBegin = Vector3.up;      //初始速度
         public float releaseTime = 1;
         public float liveTime = 1;
+        [Range(0, 1f)]
+        public float collsionScale = 1;
 
         //更新
         [Range(1, 8)]

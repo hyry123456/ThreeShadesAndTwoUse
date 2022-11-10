@@ -26,6 +26,7 @@ RWStructuredBuffer<ParticleGroupsData> _GroupBuffer;            //每一组粒�
 RWStructuredBuffer<CollsionStruct> _CollsionBuffer;            //该粒子可以碰撞到的所有物体
 
 uint _CollsionData;    //碰撞体数量，为0表示不碰撞
+float _CollsionScale;   //碰撞后的大小缩放
 
 float _Arc;         //设置的角度，圆形初始化位置时用到该数据
 float _Radius;      //球的半径
@@ -237,7 +238,7 @@ void UpdataSpeed(inout NoiseParticleData input){
 // }
 
 
-void CheckCollsion(inout NoiseParticleData input){
+bool CheckCollsion(inout NoiseParticleData input){
     for(uint i = 0; i < _CollsionData; i++){
         CollsionStruct collider = _CollsionBuffer[i];
         switch(collider.mode){
@@ -249,6 +250,7 @@ void CheckCollsion(inout NoiseParticleData input){
                     float3 force = dot(input.nowSpeed, input.nowSpeed) * forceDir;
                     input.nowSpeed += force * _Time.z;
                     input.worldPos = normalize(-duration) * collider.radius + collider.center;
+                    return true;
                 }
 
                 break;
@@ -261,19 +263,19 @@ void CheckCollsion(inout NoiseParticleData input){
                 if(currentPos.x < boxMax.x){
                     if(currentPos.x < boxMin.x)
                         break;
-                    absDir.x = abs(currentPos.x - collider.center.x);
+                    absDir.x = collider.offset.x - abs(currentPos.x - collider.center.x);
                 }
                 else break;
                 if(currentPos.y < boxMax.y){
                     if(currentPos.y < boxMin.y)
                         break;
-                    absDir.y = abs(currentPos.y - collider.center.y);
+                    absDir.y = collider.offset.y - abs(currentPos.y - collider.center.y);
                 }
                 else break;
                 if(currentPos.z < boxMax.z){
                     if(currentPos.z < boxMin.z)
                         break;
-                    absDir.z = abs(currentPos.z - collider.center.z);
+                    absDir.z = collider.offset.z - abs(currentPos.z - collider.center.z);
                 }
                 else break;
 
@@ -283,14 +285,14 @@ void CheckCollsion(inout NoiseParticleData input){
                             input.worldPos.x = boxMin.x;
                         else
                             input.worldPos.x = boxMax.x;
-                        input.nowSpeed.x = -input.nowSpeed.x * 0.2;
+                        input.nowSpeed.x = -input.nowSpeed.x * _CollsionScale;
                     }
                     else{               //z小于x
                         if(input.worldPos.z < collider.center.z)
                             input.worldPos.z = boxMin.z;
                         else
                             input.worldPos.z = boxMax.z;
-                        input.nowSpeed.z = -input.nowSpeed.z * 0.2;
+                        input.nowSpeed.z = -input.nowSpeed.z * _CollsionScale;
                     }
                 }
                 else{           //y小于x
@@ -299,20 +301,21 @@ void CheckCollsion(inout NoiseParticleData input){
                             input.worldPos.y = boxMin.y;
                         else
                             input.worldPos.y = boxMax.y;
-                        input.nowSpeed.y = -input.nowSpeed.y * 0.2;
+                        input.nowSpeed.y = -input.nowSpeed.y * _CollsionScale;
                     }
                     else{               //z小于y
                         if(input.worldPos.z < collider.center.z)
                             input.worldPos.z = boxMin.z;
                         else
                             input.worldPos.z = boxMax.z;
-                        input.nowSpeed.z = -input.nowSpeed.z * 0.2;
+                        input.nowSpeed.z = -input.nowSpeed.z * _CollsionScale;
                     }
                 }
-                input.nowSpeed = input.nowSpeed * 0.9;
-                break;
+                // input.nowSpeed = input.nowSpeed * 0.9;
+                return true;
         }
     }
+    return false;
 }
 
 void OutParticle(float parLiveTime, inout NoiseParticleData particle){

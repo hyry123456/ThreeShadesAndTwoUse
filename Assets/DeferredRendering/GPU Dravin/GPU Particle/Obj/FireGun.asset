@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa1654aaf9968f041ac37b605f855180, type: 3}
-  m_Name: fireworks
+  m_Name: FireGun
   m_EditorClassIdentifier: 
-  groupShapeMode: 0
+  groupShapeMode: 1
   particleShadpeMode: 1
   groupSpeedMode: 0
-  particleSpeedMode: 4
+  particleSpeedMode: 1
   sizeBySpeedMode: 0
   speedRange: {x: 1, y: 2}
   sizeRange: {x: 0.1, y: 0.3}
@@ -27,12 +27,13 @@ MonoBehaviour:
   particleRadius: 0.1
   groupCubeRange: {x: 1, y: 1, z: 1}
   particleCubeRange: {x: 1, y: 1, z: 1}
-  groupVelocityBegin: {x: 0, y: 5, z: 0}
-  particleVelocityBegin: 10
+  groupVelocityBegin: {x: -15, y: 0, z: 0}
+  particleVelocityBegin: 0.01
   octave: 8
-  frequency: 100
-  groupIntensity: 10
-  particleIntensity: 20
+  frequency: 313.3
+  groupIntensity: 30.09
+  particleIntensity: 30
+  collsionScale: 1
   particleGradient:
     serializedVersion: 2
     key0: {r: 0, g: 20.580393, b: 23.968628, a: 1}
@@ -139,6 +140,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  groupTime: 1
+  groupTime: 5
   particleTime: 2
   groupReleaseTime: 0.3

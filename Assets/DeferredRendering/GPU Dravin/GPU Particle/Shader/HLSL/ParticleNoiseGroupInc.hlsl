@@ -21,7 +21,7 @@ RWStructuredBuffer<GroupControlParticle> _GroupControlBuffer;
 
 //粒子模式, X为位置初始化模式，Y是速度初始化模式，Z是输出模式，W为是否需要物理模拟
 // int4 _Mode;，这个控制的是单个粒子的行为，不控制粒子组的行为
-int3 _GroupMode;        //x是组的位置初始化模式，Y是速度初始化模式, z是组是否应用重力
+int4 _GroupMode;        //x是组的位置初始化模式，Y是速度初始化模式, z是组是否应用重力,w为是否碰撞后取消组
 
 float _GroupArc;
 float _GroupRadius;
@@ -129,7 +129,7 @@ void InitialParticleBesideGroup(inout NoiseParticleData particle, GroupControlPa
 //只有粒子的第一次速度初始化，
 float3 GetFreedomBeginSpeed(float random, float3 currentPos, float3 oriSpeed, float3 oriPos){
 
-    float speed = length(oriSpeed) * random;    //根据速度大小确定一个随机速度
+    float speed = random * _ParticleBeginSpeed;    //根据速度大小确定一个随机速度
     float3 normal = normalize(oriSpeed);
     float3 direct = normalize(currentPos - oriPos);
     switch(_Mode.y){
@@ -190,5 +190,86 @@ void OnFreedomParticle(inout NoiseParticleData particle, GroupControlParticle gr
 void UpdataGroupSpeed(inout GroupControlParticle group, float3 random){
     group.currentSpeed += CurlNoise3D(group.worldPos * random.xyz * _Frequency, _Octave) * _GroupIntensity * _Time.z;
 }
+
+bool CheckCollsion(inout GroupControlParticle group){
+    for(uint i = 0; i < _CollsionData; i++){
+        CollsionStruct collider = _CollsionBuffer[i];
+        switch(collider.mode){
+            case 1:     //球型模式
+                float3 duration = collider.center - group.worldPos;
+                float len = length(duration);
+                if(len <= collider.radius){
+                    float3 forceDir = normalize(-duration);
+                    float3 force = dot(group.currentSpeed, group.currentSpeed) * forceDir;
+                    group.currentSpeed += force * _Time.z;
+                    group.worldPos = normalize(-duration) * collider.radius + collider.center;
+                    return true;
+                }
+                break;
+            default:    //盒子碰撞
+                //判断是否超过盒子范围
+                float3 boxMax = collider.center + collider.offset;
+                float3 boxMin = collider.center - collider.offset;
+                float3 currentPos = group.worldPos;
+                float3 absDir = 0;
+                if(currentPos.x < boxMax.x){
+                    if(currentPos.x < boxMin.x)
+                        break;
+                    absDir.x = collider.offset.x - abs(currentPos.x - collider.center.x);
+                }
+                else break;
+                if(currentPos.y < boxMax.y){
+                    if(currentPos.y < boxMin.y)
+                        break;
+                    absDir.y = collider.offset.y - abs(currentPos.y - collider.center.y);
+                }
+                else break;
+                if(currentPos.z < boxMax.z){
+                    if(currentPos.z < boxMin.z)
+                        break;
+                    absDir.z = collider.offset.z - abs(currentPos.z - collider.center.z);
+                }
+                else break;
+
+                //到达这里就是已经发生碰撞了
+                if(absDir.x < absDir.y){        //x小于y
+                    if(absDir.x < absDir.z){    //x小于z
+                        if(group.worldPos.x < collider.center.x)
+                            group.worldPos.x = boxMin.x;
+                        else
+                            group.worldPos.x = boxMax.x;
+                        group.currentSpeed.x = -group.currentSpeed.x * 0.2;
+                    }
+                    else{               //z小于x
+                        if(group.worldPos.z < collider.center.z)
+                            group.worldPos.z = boxMin.z;
+                        else
+                            group.worldPos.z = boxMax.z;
+                        group.currentSpeed.z = -group.currentSpeed.z * 0.2;
+                    }
+                }
+                else{           //y小于x
+                    if(absDir.y < absDir.z){    //y小于z
+                        if(group.worldPos.y < collider.center.y)
+                            group.worldPos.y = boxMin.y;
+                        else
+                            group.worldPos.y = boxMax.y;
+                        group.currentSpeed.y = -group.currentSpeed.y * 0.2;
+                    }
+                    else{               //z小于y
+                        if(group.worldPos.z < collider.center.z)
+                            group.worldPos.z = boxMin.z;
+                        else
+                            group.worldPos.z = boxMax.z;
+                        group.currentSpeed.z = -group.currentSpeed.z * 0.2;
+                    }
+                }
+                group.currentSpeed = group.currentSpeed * 0.9;
+                return true;
+        }
+    }
+    return false;
+}
+
 
 #endif

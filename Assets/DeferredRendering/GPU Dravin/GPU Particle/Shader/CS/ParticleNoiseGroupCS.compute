@@ -135,26 +135,40 @@ void Noise_PerFixFrame(int3 gid : SV_GroupID, int index : SV_GroupIndex){
     }
 
 }
+        
 
+#pragma kernel Noise_PerFixFrameWithCollsion
 
-// #pragma kernel Noise_PerFixFrameWithCollsion
+[numthreads(64, 1, 1)]
+void Noise_PerFixFrameWithCollsion(int3 gid : SV_GroupID, int index : SV_GroupIndex){
+    int objIndex = gid.x * 64 + index;
 
-// [numthreads(64, 1, 1)]
-// void Noise_PerFixFrameWithCollsion(int3 gid : SV_GroupID, int index : SV_GroupIndex){
-//     int objIndex = gid.x * 64 + index;
+    NoiseParticleData particle = _ParticleNoiseBuffer[objIndex];
+    GroupControlParticle group = _GroupControlBuffer[gid.x];
 
-//     NoiseParticleData particle = _ParticleNoiseBuffer[objIndex];
+    switch(particle.index.y){
+        case 0:     //未运行时直接退出
+            return;
+        case 1:     //组阶段，如果不是第一个粒子就直接退出，防止异步bug
+            if(index != 0)
+                return;
+            UpdataGroupSpeed(group, particle.random.xyz);
+            if(_GroupMode.z == 1)
+                group.currentSpeed += float3(0, -GRAVITY, 0) * _Time.z;
+            if(CheckCollsion(group)){
+                if(_GroupMode.w == 1)       //判断是否破碎后就取消组
+                    group.currentMode.x = 2;
+            }
+            _GroupControlBuffer[gid.x] = group;         //赋值组数据
+            break;
+        case 2:     //正常粒子，直接自由移动即可
+            UpdataSpeed(particle);
 
-//     //死亡直接退出
-//     if(particle.index.y == 0)
-//         return;
-    
-//     UpdataSpeed(particle);
-//     if(_Mode.w == 1)
-//         particle.nowSpeed += float3(0, -GRAVITY, 0) * _Time.z;
+            if(_Mode.w == 1)
+                particle.nowSpeed += float3(0, -GRAVITY, 0) * _Time.z;
+            CheckCollsion(particle);    //普通粒子碰撞
+            _ParticleNoiseBuffer[objIndex] = particle;  //赋值单个粒子数据
+            break;
+    }
 
-//     if(_CollsionData > 0)
-//         CheckCollsion(particle);
-    
-//     _ParticleNoiseBuffer[objIndex] = particle;
-// }
+}

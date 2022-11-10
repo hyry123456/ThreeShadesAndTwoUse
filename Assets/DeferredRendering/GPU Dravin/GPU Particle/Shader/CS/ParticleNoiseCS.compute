@@ -98,11 +98,13 @@ void Noise_PerFixFrameWithCollsion(int3 gid : SV_GroupID, int index : SV_GroupIn
         return;
     
     UpdataSpeed(particle);
-    if(_Mode.w == 1)
-        particle.nowSpeed += float3(0, -GRAVITY, 0) * _Time.z;
+    if(!CheckCollsion(particle)){
+        if(_Mode.w == 1)
+            particle.nowSpeed += float3(0, -GRAVITY, 0) * _Time.z;
+    }
 
-    if(_CollsionData > 0)
-        CheckCollsion(particle);
+    // if(_CollsionData > 0)
+    //     CheckCollsion(particle);
     
     _ParticleNoiseBuffer[objIndex] = particle;
 }

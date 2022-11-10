@@ -45,6 +45,8 @@ namespace DefferedRender
         public float groupIntensity = 0.5f;
         [Min(0.1f)]
         public float particleIntensity = 0.5f;
+        [Range(0, 1f)]
+        public float collsionScale = 1;
 
         [GradientUsage(true)]
         public Gradient particleGradient;
