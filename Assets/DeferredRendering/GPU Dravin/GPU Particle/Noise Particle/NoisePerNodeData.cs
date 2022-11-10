@@ -1,10 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace DefferedRender
 {
-    [CreateAssetMenu(menuName = "GPUDravin/ParticleMode")]
+    [CreateAssetMenu(menuName = "GPUDravin/Particle Node Data")]
     public class NoisePerNodeData : ScriptableObject
     {
         //位置初始化模式
@@ -25,10 +23,6 @@ namespace DefferedRender
         public Vector3 velocityBegin = Vector3.up;      //初始速度
         public float releaseTime = 1;
         public float liveTime = 1;
-        //public float nearTime = 0;          //聚集粒子的持续时间，该时间不能超过liveTime
-        //[Range(0, 1.0f)]
-        //public float nearRadio;
-
 
         //更新
         [Range(1, 8)]
@@ -36,7 +30,7 @@ namespace DefferedRender
         public float frequency = 1;
         [Min(0.1f)]
         public float intensity = 0.5f;
-        public bool isPhysical;     //物理粒子
+        public bool useGravity;     //物理粒子
 
         [GradientUsage(true)]
         public Gradient gradient;
@@ -102,7 +96,6 @@ namespace DefferedRender
             colors = null;
             alphas = null;
             sizes = null;
-            //nearTime = Mathf.Min(nearTime, liveTime);
         }
 
     }

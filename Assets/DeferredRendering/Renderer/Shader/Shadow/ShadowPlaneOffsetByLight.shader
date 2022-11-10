@@ -24,7 +24,8 @@ Shader "Defferer/ShadowPlaneOffsetByLight"
             TEXTURE2D(_MainTex);
             float4 _ShadowColor;
 
-            float4 _OriginLightCenter;
+            // float4 _OriginLightCenter;
+            float4 _LightOffset;
 
 			#pragma target 3.5
 
@@ -44,22 +45,31 @@ Shader "Defferer/ShadowPlaneOffsetByLight"
 
             Varyings vert (Attributes input) {
                 Varyings output;
-                float3 worldCenter = TransformObjectToWorld(0);
-                float3 worldPos = TransformObjectToWorld(input.positionOS);
-                float3 lightDir = _OriginLightCenter - worldCenter;
-                lightDir.y = 0; lightDir = normalize(lightDir);                 //得到灯光的平面方向
-                float3 objPointDir = worldPos - worldCenter;
-                float cosRadio = dot(normalize(objPointDir), lightDir) - 1.0; //得到灯光与顶点的夹角，映射到-2-0之间，保证越近越小
-                float3 positionWS = worldPos + lightDir * cosRadio * distance(_OriginLightCenter, worldCenter);
+
+                float3 positionOS = input.positionOS;
+
+                float3 offsetDir = _LightOffset - positionOS; 
+                float dis = length(_LightOffset);
+                float cosRadio = dot(normalize(positionOS), normalize(offsetDir)) - 1.0; //得到灯光与顶点的夹角，映射到-2-0之间，保证越近越小
+                offsetDir.y = 0;
+                positionOS += offsetDir * cosRadio * dis;
+                float3 worldPos = TransformObjectToWorld(positionOS);
+
+                // float3 worldCenter = TransformObjectToWorld(0);
+                // 
+                // float3 lightDir = _OriginLightCenter - worldCenter;
+                // lightDir.y = 0; lightDir = normalize(lightDir);                 //得到灯光的平面方向
+                // float3 objPointDir = worldPos - worldCenter;
+                // float3 positionWS = worldPos + lightDir * cosRadio * distance(_OriginLightCenter, worldCenter);
 
                 // float sinRadio = sqrt(1 - cosRadio * cosRadio);
                 // float dis = distance(_OriginLightCenter, positionWS) * _OffsetSize;
                 // float3 offsetDir = dis * sinRadio * lightDir;
                 // offsetDir.y = 0;        //清除Y轴偏移
                 // positionWS += offsetDir;
-                output.positionWS = positionWS;
+                output.positionWS = worldPos;
                 output.uv = input.uv;
-                output.positionCS_SS = TransformWorldToHClip(positionWS);
+                output.positionCS_SS = TransformWorldToHClip(worldPos);
 
                 return output;
             }

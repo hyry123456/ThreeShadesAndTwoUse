@@ -126,7 +126,7 @@ namespace DefferedRender
         public bool useGravity;
         /// <summary>        /// 粒子渲染是否要跟随速度，而不是朝向摄像机        /// </summary>
         public bool followSpeed;
-        /// <summary>        /// radius是角度，radian是弧度(0-6.28)，用来控制这个球渲染的范围        /// </summary>
+        /// <summary>        /// radius是半径，radian是弧度(0-6.28)，用来控制这个球渲染的范围        /// </summary>
         public float radius, radian;
         /// <summary>        
         /// 矩形生成粒子时确定这个矩形的大小，分别表示xyz的偏移值，

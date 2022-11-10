@@ -123,7 +123,6 @@ namespace DefferedRender
             buffer.BeginSample(SampleName);
             ExecuteBuffer();
 
-
             //之后加后处理、灯光等数据准备
             //准备灯光数据，在灯光数据中会进行阴影数据准备
             lighting.Setup(

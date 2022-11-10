@@ -16,7 +16,7 @@ MonoBehaviour:
   speedMode: 0
   sizeBySpeedMode: 0
   speedRange: {x: -1, y: 1}
-  sizeRange: {x: 0.2, y: 0.2}
+  sizeRange: {x: 0.3, y: 1}
   arc: 6.18
   radius: 10
   cubeRange: {x: 20, y: 1, z: 30}
@@ -26,11 +26,11 @@ MonoBehaviour:
   octave: 1
   frequency: 1
   intensity: 5
-  isPhysical: 1
+  useGravity: 0
   gradient:
     serializedVersion: 2
-    key0: {r: 0.2924528, g: 0.2924528, b: 0.2924528, a: 0.39215687}
-    key1: {r: 0.3018868, g: 0.3018868, b: 0.3018868, a: 0.39215687}
+    key0: {r: 0.5188679, g: 0.5188679, b: 0.5188679, a: 0.39215687}
+    key1: {r: 0.5660378, g: 0.5660378, b: 0.5660378, a: 0.39215687}
     key2: {r: 0, g: 0.13157213, b: 0.33962262, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}

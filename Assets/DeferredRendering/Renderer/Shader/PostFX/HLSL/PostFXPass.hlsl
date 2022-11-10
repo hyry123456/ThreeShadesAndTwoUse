@@ -92,16 +92,18 @@ float4 SSS_Fragment(Varyings i) : SV_Target{
 
     float2 hitScreenPos = float2(-1, -1);
     float4 reflectTex = 0;
-    float4 specular = SAMPLE_TEXTURE2D(_GBufferSpecularTex, sampler_PostFXSource, i.screenUV);                   //PBR数据
-    if(specular.w > 0.0){
+    // float4 specular = SAMPLE_TEXTURE2D(_GBufferSpecularTex, sampler_PostFXSource, i.screenUV);                   //PBR数据
+	float4 reflect = SAMPLE_TEXTURE2D(_ReflectTargetTex, sampler_PostFXSource, i.screenUV);			//反射数据决定是否进行PBR
+    if(reflect.w > 0.0){
         if (screenSpaceRayMarching(positionVS, reflectDir, hitScreenPos))
         {
             reflectTex = SAMPLE_TEXTURE2D_LOD(_PostFXSource, sampler_PostFXSource, hitScreenPos, 0);
         }
-		else{
-			clip(-1);
-		}
+		else
+			reflectTex = float4(reflect.xyz, 1);
     }
+	else
+		reflectTex = float4(reflect.xyz, 1);
     return reflectTex;
 }
 

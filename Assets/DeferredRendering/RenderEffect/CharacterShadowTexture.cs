@@ -11,13 +11,17 @@ namespace DefferedRender
         public Shader shader;
 
         public Transform originPos;
+        public Transform followCharacter;   //跟随的对象
+        public bool beginFollow;
+        public LayerMask GroundLayer;
         private Mesh mesh;
-        
+        [SerializeField]
+        float offsetY;
+        [SerializeField]
         private Material material;
 
         public Color shadowCol;
         public Texture2D mainTex;
-
         private void OnValidate()
         {
             if (shader == null) return;
@@ -69,16 +73,38 @@ namespace DefferedRender
                 material.renderQueue = 2100;
             }
             mr.material = material;
+            if(followCharacter != null && originPos != null)
+                offsetY = Mathf.Abs(followCharacter.position.y - originPos.position.y);
+        }
+
+        private void Start()
+        {
+            if(followCharacter != null && originPos != null)
+                offsetY = Mathf.Abs(followCharacter.position.y - originPos.position.y);
         }
 
         private void Update()
         {
             if (originPos == null)
                 return;
-            material.SetVector("_OriginLightCenter", originPos.position);
+            material.SetVector("_LightOffset", originPos.position - transform.position);
             if (mainTex)
                 material.SetTexture("_MainTex", mainTex);
             material.SetColor("_ShadowColor", shadowCol);
+            if(followCharacter != null && beginFollow)
+            {
+                RaycastHit hit;
+                Vector3 temp = transform.position;
+                temp.x = followCharacter.position.x;
+                temp.z = followCharacter.position.z;
+                if (Physics.Raycast(followCharacter.position, Vector3.down, out hit, 10, GroundLayer)){
+                    temp.y = hit.point.y + 0.01f;
+                }
+                transform.position = temp;
+                temp = originPos.position;
+                temp.y = followCharacter.position.y + offsetY;
+                originPos.position = temp;
+            }
         }
 
 

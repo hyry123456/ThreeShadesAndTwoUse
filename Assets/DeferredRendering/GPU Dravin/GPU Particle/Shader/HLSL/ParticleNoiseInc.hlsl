@@ -23,6 +23,9 @@ struct ParticleGroupsData{
 
 RWStructuredBuffer<NoiseParticleData> _ParticleNoiseBuffer;     //所有的粒子数据
 RWStructuredBuffer<ParticleGroupsData> _GroupBuffer;            //每一组粒子需要的数据
+RWStructuredBuffer<CollsionStruct> _CollsionBuffer;            //该粒子可以碰撞到的所有物体
+
+uint _CollsionData;    //碰撞体数量，为0表示不碰撞
 
 float _Arc;         //设置的角度，圆形初始化位置时用到该数据
 float _Radius;      //球的半径
@@ -35,7 +38,7 @@ float _Intensity;   //影响的强度值
 float4 _LifeTime;   //X释放时间，Y为存活时间，Z和W为贴合初始点时间范围
 int4 _Mode;         //粒子模式, X为位置初始化模式，Y是速度初始化模式，Z是输出模式，W为是否需要物理模拟
 float4x4 _RotateMatrix;   //旋转矩阵，用来确定粒子初始化位置，也就是将模型空间投影到世界空间
-float3 _BeginSpeed;         //初始速度
+float4 _BeginSpeed;         //初始速度,w待定
 float4 _SizeRange;          //大小范围，x，y是粒子大小范围，Z,W是当选中某个轴为大小模式时的映射范围
 
 
@@ -52,6 +55,18 @@ float3 GetSphereBeginPos(float2 random) {
 
     return mul(_RotateMatrix, float4(pos, 1)).xyz;
 }
+//根据传入数据进行的初始化
+float3 GetSphereBeginPos(float2 random, float arc, float radius) {
+    float3 pos;
+    float u, _sin;
+    u = lerp(-arc/2, arc / 2, random.y);
+    pos.x = (random.x - 0.5) * 2;
+    _sin = sqrt(1.0 - pos.x * pos.x);
+    pos.z = cos(u) * _sin;
+    pos.y = sin(u) * _sin;
+    pos = normalize(pos) * radius;
+    return pos;
+}
 
 float3 GetCubeBeginPos(float3 random){
     float3 begin = -_CubeRange/2.0;
@@ -60,6 +75,14 @@ float3 GetCubeBeginPos(float3 random){
     return mul(_RotateMatrix, float4(pos, 1)).xyz;
 }
 
+float3 GetCubeBeginPos(float3 random, float3 cubeRange){
+    float3 begin = -cubeRange/2.0;
+    float3 end = cubeRange/2.0;
+    float3 pos = lerp(begin, end, random);
+    return pos;
+}
+
+//初始化位置的调用方法
 float3 GetBeginPos(float3 ramdom){
     switch (_Mode.x){
         case 1:
@@ -75,8 +98,8 @@ float3 GetBeginPos(float3 ramdom){
 //获得初始速度
 float3 GetBeginSpeed(float random, float3 beginPos){
 
-    float speed = length(_BeginSpeed) * random;    //根据速度大小确定一个随机速度
-    float3 normal = normalize(_BeginSpeed);
+    float speed = length(_BeginSpeed.xyz) * random;    //根据速度大小确定一个随机速度
+    float3 normal = normalize(_BeginSpeed.xyz);
     float3 direct = normalize(beginPos - mul(_RotateMatrix, float4(0, 0, 0, 1)).xyz);
     switch(_Mode.y){
         case 1:     //速度是法线以及大小，在粒子位置生成一个垂直于法线且是向外的力度
@@ -88,7 +111,7 @@ float3 GetBeginSpeed(float random, float3 beginPos){
         case 4:     //离开起始位置的速度，也就是从中间往外面跑
             return direct * speed;
         default: //默认模式,传入速度就是初始化速度
-            return _BeginSpeed;
+            return _BeginSpeed.xyz;
     }
 }
 
@@ -105,19 +128,6 @@ void InitialParticle(inout NoiseParticleData input) {
 
 //更新粒子
 void UpdateParticle(inout NoiseParticleData particle, int groupIndex, int originIndex, float parLiveTime){
-    // switch(groupIndex){
-    //     case 0:
-    //         break;
-    //     default:
-    //         //进行贴近
-    //         if(parLiveTime < _NearData.x){
-    //             NoiseParticleData origin = _ParticleNoiseBuffer[originIndex];
-    //             particle.worldPos = lerp(particle.worldPos, origin.worldPos, _NearData.y);
-    //         }
-    //         break;
-    // }
-
-
     particle.worldPos += particle.nowSpeed * _Time.y;      //更新位置
     particle.random.w += _Time.y;
 
@@ -213,19 +223,96 @@ float3 CurlNoise3D(float3 pos, int octave)
     return float3(a, b, c);
 }
 
-// NoiseParticleData UpdataPosition(NoiseParticleData i, Par_Initi_Data init){
-//     i.worldPos += i.nowSpeed * _Time.y;
-//     i.random.w += _Time.y;
-//     return i;
-// }
-
-// NoiseParticleData UpdataSpeed(NoiseParticleData i, Par_Initi_Data init){
-//     i.nowSpeed += CurlNoise3D(i.worldPos * init.noiseData.y, (int)init.noiseData.x) * init.noiseData.z * _Time.z;
-//     return i;
-// }
-
 void UpdataSpeed(inout NoiseParticleData input){
     input.nowSpeed += CurlNoise3D(input.worldPos * input.random.xyz * _Frequency, _Octave) * _Intensity * _Time.z;
+}
+
+
+// struct CollsionStruct
+// {
+//     float radius;        //用正负判断碰撞类型
+//     float3 center;
+//     float3 offset;      //碰撞偏移，只从中间往四周偏移
+//     int mode;           //模式
+// }
+
+
+void CheckCollsion(inout NoiseParticleData input){
+    for(uint i = 0; i < _CollsionData; i++){
+        CollsionStruct collider = _CollsionBuffer[i];
+        switch(collider.mode){
+            case 1:     //球型模式
+                float3 duration = collider.center - input.worldPos;
+                float len = length(duration);
+                if(len <= collider.radius){
+                    float3 forceDir = normalize(-duration);
+                    float3 force = dot(input.nowSpeed, input.nowSpeed) * forceDir;
+                    input.nowSpeed += force * _Time.z;
+                    input.worldPos = normalize(-duration) * collider.radius + collider.center;
+                }
+
+                break;
+            default:    //盒子碰撞
+                //判断是否超过盒子范围
+                float3 boxMax = collider.center + collider.offset;
+                float3 boxMin = collider.center - collider.offset;
+                float3 currentPos = input.worldPos;
+                float3 absDir = 0;
+                if(currentPos.x < boxMax.x){
+                    if(currentPos.x < boxMin.x)
+                        break;
+                    absDir.x = abs(currentPos.x - collider.center.x);
+                }
+                else break;
+                if(currentPos.y < boxMax.y){
+                    if(currentPos.y < boxMin.y)
+                        break;
+                    absDir.y = abs(currentPos.y - collider.center.y);
+                }
+                else break;
+                if(currentPos.z < boxMax.z){
+                    if(currentPos.z < boxMin.z)
+                        break;
+                    absDir.z = abs(currentPos.z - collider.center.z);
+                }
+                else break;
+
+                if(absDir.x < absDir.y){        //x小于y
+                    if(absDir.x < absDir.z){    //x小于z
+                        if(input.worldPos.x < collider.center.x)
+                            input.worldPos.x = boxMin.x;
+                        else
+                            input.worldPos.x = boxMax.x;
+                        input.nowSpeed.x = -input.nowSpeed.x * 0.2;
+                    }
+                    else{               //z小于x
+                        if(input.worldPos.z < collider.center.z)
+                            input.worldPos.z = boxMin.z;
+                        else
+                            input.worldPos.z = boxMax.z;
+                        input.nowSpeed.z = -input.nowSpeed.z * 0.2;
+                    }
+                }
+                else{           //y小于x
+                    if(absDir.y < absDir.z){    //y小于z
+                        if(input.worldPos.y < collider.center.y)
+                            input.worldPos.y = boxMin.y;
+                        else
+                            input.worldPos.y = boxMax.y;
+                        input.nowSpeed.y = -input.nowSpeed.y * 0.2;
+                    }
+                    else{               //z小于y
+                        if(input.worldPos.z < collider.center.z)
+                            input.worldPos.z = boxMin.z;
+                        else
+                            input.worldPos.z = boxMax.z;
+                        input.nowSpeed.z = -input.nowSpeed.z * 0.2;
+                    }
+                }
+                input.nowSpeed = input.nowSpeed * 0.9;
+                break;
+        }
+    }
 }
 
 void OutParticle(float parLiveTime, inout NoiseParticleData particle){
@@ -235,7 +322,6 @@ void OutParticle(float parLiveTime, inout NoiseParticleData particle){
     particle.uvTransData = uvData.uvData;
     particle.interpolation = uvData.interpolation;
     particle.color = float4(LoadColor(time_01), LoadAlpha(time_01));
-    // particle.color = time_01;
 
     //大小
     float size01;

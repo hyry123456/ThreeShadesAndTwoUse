@@ -18,7 +18,7 @@ MonoBehaviour:
     useGPUInstancing: 1
     useSRPBatcher: 1
     maskLight: 0
-    renderScale: 0.6
+    renderScale: 0.8
     renderingLayerMask: -1
     cameraShader: {fileID: 4800000, guid: f6039a3f5da7b864696492421b8527b1, type: 3}
     fogSetting:

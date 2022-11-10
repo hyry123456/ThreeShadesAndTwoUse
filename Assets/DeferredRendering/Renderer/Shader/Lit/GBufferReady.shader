@@ -2,8 +2,8 @@ Shader "Defferer/GBufferReady"
 {
     Properties
     {
-        _BaseMap("Texture", 2D) = "white" {}
-		_BaseColor("Color", Color) = (0.5, 0.5, 0.5, 1.0)
+        _MainTex("Texture", 2D) = "white" {}
+		_Color("Color", Color) = (0.5, 0.5, 0.5, 1.0)
 		_ShiftColor("BSDF Shift Color", Color) = (0.5, 0.5, 0.5, 1.0)
 		_Width("BSDF Width", Range(0.1, 1.0)) = 1
 		_Cutoff ("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
@@ -32,9 +32,7 @@ Shader "Defferer/GBufferReady"
 		[Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 1
 		[Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 0
 		[Enum(Off, 0, On, 1)] _ZWrite ("Z Write", Float) = 1
-
-		[HideInInspector] _MainTex("Texture for Lightmap", 2D) = "white" {}
-		[HideInInspector] _Color("Color for Lightmap", Color) = (0.5, 0.5, 0.5, 1.0)
+		[Enum(UnityEngine.Rendering.CullMode)] _CullBack ("Cull Off", Float) = 0
     }
     SubShader
     {
@@ -47,6 +45,7 @@ Shader "Defferer/GBufferReady"
             Tags {
                 "LightMode" = "OutGBuffer"
             }
+			Cull [_CullBack]
 
             HLSLPROGRAM
             #pragma vertex LitPassVertex

@@ -19,7 +19,7 @@ MonoBehaviour:
   sizeRange: {x: 5, y: 10}
   arc: 6.28
   radius: 2
-  cubeRange: {x: 10, y: 1, z: 10}
+  cubeRange: {x: 3, y: 1, z: 10}
   velocityBegin: {x: 0, y: 1, z: -5}
   releaseTime: 10
   liveTime: 5
@@ -30,8 +30,8 @@ MonoBehaviour:
   gradient:
     serializedVersion: 2
     key0: {r: 0.67924523, g: 0.67924523, b: 0.67924523, a: 0}
-    key1: {r: 1, g: 1, b: 1, a: 0.03529412}
-    key2: {r: 1, g: 1, b: 1, a: 0.18431373}
+    key1: {r: 1, g: 1, b: 1, a: 0.13725491}
+    key2: {r: 1, g: 1, b: 1, a: 0.25490198}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}

@@ -14,7 +14,6 @@
 // };
 
 
-#define random(seed) sin(seed * 641.5467987313875 + 1.943856175)
 
 #pragma kernel Noise_PerFrame
 
@@ -23,19 +22,6 @@
 void Noise_PerFrame(int3 gid : SV_GroupID, int index : SV_GroupIndex)
 {
     int objIndex = gid.x * 64 + index;
-
-    // if(objIndex == 0){
-    //     NoiseParticleData particle = (NoiseParticleData)0;
-    //     particle.index.xy = 1;
-    //     particle.worldPos = 0;
-    //     particle.uvTransData = 0;
-    //     particle.interpolation = 0;
-    //     particle.color = 1;
-    //     particle.size = 1;
-    //     particle.nowSpeed = 1;
-    //     _ParticleNoiseBuffer[objIndex] = particle;
-    //     return;
-    // }
 
     NoiseParticleData particle = _ParticleNoiseBuffer[objIndex];
     ParticleGroupsData group = _GroupBuffer[gid.x];
@@ -91,5 +77,32 @@ void Noise_PerFixFrame(int3 gid : SV_GroupID, int index : SV_GroupIndex){
     UpdataSpeed(particle);
     if(_Mode.w == 1)
         particle.nowSpeed += float3(0, -GRAVITY, 0) * _Time.z;
+
+    // if(_CollsionData.y > 0)
+    //     CheckCollsion(particle);
+    
+    _ParticleNoiseBuffer[objIndex] = particle;
+}
+
+
+#pragma kernel Noise_PerFixFrameWithCollsion
+
+[numthreads(64, 1, 1)]
+void Noise_PerFixFrameWithCollsion(int3 gid : SV_GroupID, int index : SV_GroupIndex){
+    int objIndex = gid.x * 64 + index;
+
+    NoiseParticleData particle = _ParticleNoiseBuffer[objIndex];
+
+    //死亡直接退出
+    if(particle.index.y == 0)
+        return;
+    
+    UpdataSpeed(particle);
+    if(_Mode.w == 1)
+        particle.nowSpeed += float3(0, -GRAVITY, 0) * _Time.z;
+
+    if(_CollsionData > 0)
+        CheckCollsion(particle);
+    
     _ParticleNoiseBuffer[objIndex] = particle;
 }

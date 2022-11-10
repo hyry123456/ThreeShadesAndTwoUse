@@ -2,11 +2,11 @@
 #define DEFFER_GBUFFER_READY_INPUT_INCLUDED
 
 
-TEXTURE2D(_BaseMap);
+TEXTURE2D(_MainTex);
 TEXTURE2D(_MaskMap);
 TEXTURE2D(_NormalMap);
 TEXTURE2D(_EmissionMap);
-SAMPLER(sampler_BaseMap);
+SAMPLER(sampler_MainTex);
 
 TEXTURE2D(_DetailMap);
 TEXTURE2D(_DetailNormalMap);
@@ -15,9 +15,9 @@ SAMPLER(sampler_DetailMap);
 
 UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
 
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
+	UNITY_DEFINE_INSTANCED_PROP(float4, _MainTex_ST)
 	UNITY_DEFINE_INSTANCED_PROP(float4, _DetailMap_ST)
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
+	UNITY_DEFINE_INSTANCED_PROP(float4, _Color)
 	UNITY_DEFINE_INSTANCED_PROP(float4, _ShiftColor)
 	UNITY_DEFINE_INSTANCED_PROP(float, _Width)
 	UNITY_DEFINE_INSTANCED_PROP(float4, _EmissionColor)
@@ -51,7 +51,7 @@ InputConfig GetInputConfig (float2 baseUV, float2 detailUV = 0.0) {
 }
 
 float2 TransformBaseUV (float2 baseUV) {
-	float4 baseST = INPUT_PROP(_BaseMap_ST);
+	float4 baseST = INPUT_PROP(_MainTex_ST);
 	return baseUV * baseST.xy + baseST.zw;
 }
 
@@ -62,7 +62,7 @@ float2 TransformDetailUV (float2 detailUV) {
 
 float4 GetMask (InputConfig c) {
 	if (c.useMask) {
-		return SAMPLE_TEXTURE2D(_MaskMap, sampler_BaseMap, c.baseUV);
+		return SAMPLE_TEXTURE2D(_MaskMap, sampler_MainTex, c.baseUV);
 	}
 	return 1.0;
 }
@@ -84,8 +84,8 @@ float GetWidth(InputConfig c){
 }
 
 float4 GetBase (InputConfig c) {
-	float4 map = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, c.baseUV);
-	float4 color = INPUT_PROP(_BaseColor);
+	float4 map = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, c.baseUV);
+	float4 color = INPUT_PROP(_Color);
 
 	if (c.useDetail) {
 		float detail = GetDetail(c).r * INPUT_PROP(_DetailAlbedo);
@@ -98,7 +98,7 @@ float4 GetBase (InputConfig c) {
 }
 
 float3 GetNormalTS (InputConfig c) {
-	float4 map = SAMPLE_TEXTURE2D(_NormalMap, sampler_BaseMap, c.baseUV);
+	float4 map = SAMPLE_TEXTURE2D(_NormalMap, sampler_MainTex, c.baseUV);
 	float scale = INPUT_PROP(_NormalScale);
 	float3 normal = DecodeNormal(map, scale);
 
@@ -113,7 +113,7 @@ float3 GetNormalTS (InputConfig c) {
 }
 
 float3 GetEmission (InputConfig c) {
-	float4 map = SAMPLE_TEXTURE2D(_EmissionMap, sampler_BaseMap, c.baseUV);
+	float4 map = SAMPLE_TEXTURE2D(_EmissionMap, sampler_MainTex, c.baseUV);
 	float4 color = INPUT_PROP(_EmissionColor);
 	return map.rgb * color.rgb;
 }

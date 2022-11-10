@@ -132,6 +132,12 @@ namespace DefferedRender
 			this.depthId = depthId;
 			this.width = width;
 			this.height = height;
+
+			if(settings.ssr.useSSR && camera.cameraType == CameraType.Game)
+				buffer.EnableShaderKeyword("_USE_SSR");
+			else
+				buffer.DisableShaderKeyword("_USE_SSR");
+
 		}
 
 		/// <summary>
@@ -191,15 +197,18 @@ namespace DefferedRender
 				buffer.SetGlobalFloat(depthThicknessId, ssr.depthThickness);
 				//绘制实时反射
 				Draw(preFrameRenderFinal, sssTargetTex, Pass.SSS);
-
-                buffer.GetTemporaryRT(bulkLightTempTexId, this.width, this.height,
-                0, FilterMode.Bilinear, useHDR ?
-                    RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
-
-                Draw(sssTargetTex, bulkLightTempTexId, Pass.BlurHorizontal);
-                Draw(bulkLightTempTexId, sssTargetTex, Pass.BlurVertical);
-                buffer.ReleaseTemporaryRT(bulkLightTempTexId);
             }
+
+			buffer.GetTemporaryRT(bulkLightTempTexId, this.width, this.height,
+				0, FilterMode.Bilinear, useHDR ?
+					RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
+
+			buffer.SetGlobalFloat("_BilaterFilterFactor", settings.ssr.bilaterFilterFactor);
+			buffer.SetGlobalVector("_BlurRadius", new Vector4(settings.ssr.blurRadius, 0));
+			Draw(sssTargetTex, bulkLightTempTexId, Pass.BilateralFilter);
+			buffer.SetGlobalVector("_BlurRadius", new Vector4(0, settings.ssr.blurRadius));
+			Draw(bulkLightTempTexId, sssTargetTex, Pass.BilateralFilter);
+			buffer.ReleaseTemporaryRT(bulkLightTempTexId);
 			//进行模糊处理
 			//buffer.GetTemporaryRT(bulkLightTempTexId, this.width, this.height,
 			//0, FilterMode.Bilinear, useHDR ?

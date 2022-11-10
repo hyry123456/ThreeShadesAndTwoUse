@@ -89,9 +89,20 @@ float GetCutoff (InputConfig c) {
 	return INPUT_PROP(_Cutoff);
 }
 
-float3 GetNormalMap(InputConfig c){
-    float normalScale = INPUT_PROP(_NormalScale);
-    return DecodeNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_MainTex, c.baseUV), normalScale);
+
+float3 GetNormalTS (InputConfig c) {
+	float4 map = SAMPLE_TEXTURE2D(_NormalMap, sampler_MainTex, c.baseUV);
+	float scale = INPUT_PROP(_NormalScale);
+	float3 normal = DecodeNormal(map, scale);
+
+	if (c.useDetail) {
+		map = SAMPLE_TEXTURE2D(_DetailNormalMap, sampler_DetailMap, c.detailUV);
+		scale = INPUT_PROP(_DetailNormalScale) * GetMask(c).b;
+		float3 detail = DecodeNormal(map, scale);
+		normal = BlendNormalRNM(normal, detail);
+	}
+	
+	return normal;
 }
 
 float3 GetEmission (InputConfig c) {

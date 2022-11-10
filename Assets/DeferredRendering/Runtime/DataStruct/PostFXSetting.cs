@@ -22,18 +22,25 @@ namespace DefferedRender
 		{
 			public bool useSSR;
 			public int rayMarchingSetp;
+            [Range(0, 1)]
 			public float marchSetpSize;
 			public float maxMarchDistance;
 			public float depthThickness;
+            [Range(0, 1)]
+			public float bilaterFilterFactor;
+			[Range(0, 5)]
+			public float blurRadius;
 		}
 
 			[SerializeField]
 		SSR ssrSetting = new SSR
 		{
 			rayMarchingSetp = 36,
-			marchSetpSize = 10,
+			marchSetpSize = 0.5f,
 			maxMarchDistance = 500,
 			depthThickness = 1,
+			bilaterFilterFactor = 0.6f,
+			blurRadius = 2,
 		};
 		public SSR ssr => ssrSetting;
 

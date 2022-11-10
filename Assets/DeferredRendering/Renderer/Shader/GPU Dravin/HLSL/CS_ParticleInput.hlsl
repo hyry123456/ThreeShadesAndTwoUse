@@ -73,35 +73,35 @@ float4 GetUV(float2 uv, float4 uvTransData) {
 }
 
 //封装点生成面
-void outOnePoint(inout TriangleStream<FragInput> tristream, NoiseParticleData particle) 
+void outOnePoint(inout TriangleStream<FragInput> tristream, NoiseParticleData particle, float texAspectRatio)
 {
     FragInput o[4] = (FragInput[4])0;
 
     float3 worldVer = particle.worldPos;
     float paritcleLen = particle.size;
 
-    float3 worldPos = worldVer + -unity_MatrixV[0].xyz * paritcleLen + -unity_MatrixV[1].xyz * paritcleLen;
+    float3 worldPos = worldVer + -unity_MatrixV[0].xyz * paritcleLen + -unity_MatrixV[1].xyz * paritcleLen * texAspectRatio;
     o[0].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[0].color = particle.color;
     o[0].uv = GetUV(float2(0, 0), particle.uvTransData);
     o[0].interpolation = particle.interpolation;
 
     worldPos = worldVer + UNITY_MATRIX_V[0].xyz * -paritcleLen
-        + UNITY_MATRIX_V[1].xyz * paritcleLen;
+        + UNITY_MATRIX_V[1].xyz * paritcleLen * texAspectRatio;
     o[1].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[1].color = particle.color;
     o[1].uv = GetUV(float2(1, 0), particle.uvTransData);
     o[1].interpolation = particle.interpolation;
 
     worldPos = worldVer + UNITY_MATRIX_V[0].xyz * paritcleLen
-        + UNITY_MATRIX_V[1].xyz * -paritcleLen;
+        + UNITY_MATRIX_V[1].xyz * -paritcleLen * texAspectRatio;
     o[2].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[2].color = particle.color;
     o[2].uv = GetUV(float2(0, 1), particle.uvTransData);
     o[2].interpolation = particle.interpolation;
 
     worldPos = worldVer + UNITY_MATRIX_V[0].xyz * paritcleLen
-        + UNITY_MATRIX_V[1].xyz * paritcleLen;
+        + UNITY_MATRIX_V[1].xyz * paritcleLen * texAspectRatio;
     o[3].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[3].color = particle.color;
     o[3].uv = GetUV(float2(1, 1), particle.uvTransData);

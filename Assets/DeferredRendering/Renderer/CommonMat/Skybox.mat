@@ -29,7 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _CloudCutoff: 0.45
-    - _CloudFrequency: 0.4
+    - _CloudFrequency: 0.18
     - _CloudNoiseScale: 0.6
     - _CloudSpeed: 1.8
     - _DistortScale: 0.1

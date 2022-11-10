@@ -38,34 +38,33 @@ void NoiseOutOnePoint(inout TriangleStream<FragInput> tristream, NoiseParticleDa
     FragInput o[4] = (FragInput[4])0;
 
     float3 worldVer = particle.worldPos;
-    float paritcleLen = particle.size / 10.0;
+    float paritcleLen = particle.size;
 
     float3 viewDir = normalize( _WorldSpaceCameraPos - worldVer );
-    float3 particleNormal = cross(viewDir, particle.nowSpeed);
-
+    float3 upDir = normalize(particle.nowSpeed), particleNormal = cross(viewDir, upDir);
     //左下
-    float3 worldPos = worldVer + -particle.nowSpeed * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
+    float3 worldPos = worldVer + -upDir * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
     o[0].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[0].color = particle.color;
     o[0].uv = GetUV(float2(0, 0), particle.uvTransData);
     o[0].interpolation = particle.interpolation;
     o[0].positionWS = worldPos;
 
-    worldPos = worldVer + -particle.nowSpeed * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
+    worldPos = worldVer + -upDir * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
     o[1].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[1].color = particle.color;
     o[1].uv = GetUV(float2(1, 0), particle.uvTransData);
     o[1].interpolation = particle.interpolation;
     o[1].positionWS = worldPos;
 
-    worldPos = worldVer + particle.nowSpeed * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
+    worldPos = worldVer + upDir * paritcleLen + -particleNormal * paritcleLen * _TexAspectRatio;
     o[2].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[2].color = particle.color;
     o[2].uv = GetUV(float2(0, 1), particle.uvTransData);
     o[2].interpolation = particle.interpolation;
     o[2].positionWS = worldPos;
 
-    worldPos = worldVer + particle.nowSpeed * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
+    worldPos = worldVer + upDir * paritcleLen + particleNormal * paritcleLen * _TexAspectRatio;
     o[3].pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
     o[3].color = particle.color;
     o[3].uv = GetUV(float2(1, 1), particle.uvTransData);
@@ -95,7 +94,7 @@ void geom(point ParticleIndex IN[1], inout TriangleStream<FragInput> tristream)
     #ifdef _FELLOW_SPEED
         NoiseOutOnePoint(tristream, particle);
     #else
-        outOnePoint(tristream, particle);
+        outOnePoint(tristream, particle, _TexAspectRatio);
     #endif
     // NoiseOutOnePoint(tristream, particle);
     // particle.worldPos = IN[0].index;

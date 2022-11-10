@@ -1,3 +1,8 @@
+
+//粒子工厂的计算方法
+#ifndef PARTICLE_FACTORY_INCLUDE
+#define PARTICLE_FACTORY_INCLUDE
+
 struct ParticleNodeData
 {
     float3 beginPos;        //该组粒子运行初始位置
@@ -72,12 +77,12 @@ float3 GetSphereBeginPos(float3 random, float arc, float radius, int sphereMode)
 
     return pos;
 }
-float3 GetCubeBeginPos(float3 random, float3 cubeRange){
-    float3 begin = -cubeRange/2.0;
-    float3 end = cubeRange/2.0;
-    float3 pos = lerp(begin, end, random);
-    return pos;
-}
+// float3 GetCubeBeginPos(float3 random, float3 cubeRange){
+//     float3 begin = -cubeRange/2.0;
+//     float3 end = cubeRange/2.0;
+//     float3 pos = lerp(begin, end, random);
+//     return pos;
+// }
 
 
 //通过欧拉角得到旋转矩阵
@@ -240,3 +245,5 @@ void UpdataSpeed(inout NoiseParticleData i, ParticleNodeData origin){
     i.nowSpeed += CurlNoise3D(i.worldPos * origin.noiseData.y, (int)origin.noiseData.x) * origin.noiseData.z * _Time.z;
     // i.nowSpeed += CurlNoise3D(i.worldPos, 3) * 10 * _Time.z;
 }
+
+#endif

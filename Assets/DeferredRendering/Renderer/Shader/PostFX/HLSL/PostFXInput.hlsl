@@ -17,6 +17,7 @@ TEXTURE2D(_GBufferNormalTex);
 SAMPLER(sampler_GBufferNormalTex);
 //TEXTURE2D(_GBufferDepthTex);
 TEXTURE2D(_GBufferSpecularTex);
+TEXTURE2D(_ReflectTargetTex);
 TEXTURE2D(_GBufferBakeTex);
 
 
@@ -137,9 +138,13 @@ bool screenSpaceRayMarching(float3 rayOri, float3 rayDir, inout float2 hitScreen
     }
     float dir = sign(displacement.x);
     float invdx = dir / displacement.x;
-    float2 dp = float2(dir, invdx * displacement.y) * _RayMarchingStepSize;
-    float3 dq = (QEnd - QOri) * invdx * _RayMarchingStepSize;
-    float  dk = (kEnd - kOri) * invdx * _RayMarchingStepSize;
+    float stepSize = max(_PostFXSource_TexelSize.z, _PostFXSource_TexelSize.w) / 100.0;
+    // float2 dp = float2(dir, invdx * displacement.y) * _RayMarchingStepSize;
+    float2 dp = float2(dir, invdx * displacement.y) * stepSize * _RayMarchingStepSize;
+    // float3 dq = (QEnd - QOri) * invdx * _RayMarchingStepSize;
+    float3 dq = (QEnd - QOri) * invdx * stepSize * _RayMarchingStepSize;
+    // float  dk = (kEnd - kOri) * invdx * _RayMarchingStepSize;
+    float  dk = (kEnd - kOri) * invdx * stepSize * _RayMarchingStepSize;
     float rayZmin = rayOri.z;
     float rayZmax = rayOri.z;
     float preZ = rayOri.z;
@@ -148,7 +153,8 @@ bool screenSpaceRayMarching(float3 rayOri, float3 rayDir, inout float2 hitScreen
     float3 Q = QOri;
     float k = kOri;
 
-    float random = random((rayDir.y + rayDir.x) * _ScreenParams.x * _ScreenParams.y + 0.2312312);
+    float random = random( (rayDir.x + rayOri.z + rayOri.y + rayOri.x) * 1000);
+    // float random = 1;
 
     dq *= lerp(0.9, 1, random);
     dk *= lerp(0.9, 1, random);

@@ -52,6 +52,7 @@ Shader "Defferer/BRDF_WithWater"
 			#pragma shader_feature _MASK_MAP
 			#pragma shader_feature _NORMAL_MAP
 			#pragma shader_feature _DETAIL_MAP
+			#pragma shader_feature _USE_SSR
 			#pragma multi_compile _ LIGHTMAP_ON
 			
 			#pragma multi_compile_instancing

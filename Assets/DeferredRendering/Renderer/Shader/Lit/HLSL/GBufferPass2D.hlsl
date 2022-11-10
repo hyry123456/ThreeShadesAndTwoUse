@@ -27,6 +27,7 @@ struct Varyings2D
     float3 TtoW2 : NORMAL_TO_WORLD2;
     float3 positionWS : WORLDPOS;
 	float4 color : COLOR;
+	GI_VARYINGS_DATA
 	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -42,15 +43,12 @@ Varyings2D LitPassVertex (Attributes2D input) {
 	output.baseUV = TransformBaseUV(input.texcoord);
 	output.color = input.color;
 
-	#if defined(_NORMAL_MAP)
-        float3 worldNormal = TransformObjectToWorldNormal(_2D_Normal);
-        float3 worldTangent = TransformObjectToWorldDir(input.tangentOS.xyz);
-        float3 worldBinormal = cross(worldNormal, worldTangent) * input.tangentOS.w;
-        //按列排序获得切线空间转世界空间的矩阵,顺便加一个世界坐标位置
-        output.TtoW0 = float3(worldTangent.x, worldBinormal.x, worldNormal.x);
-        output.TtoW1 = float3(worldTangent.y, worldBinormal.y, worldNormal.y);
-        output.TtoW2 = float3(worldTangent.z, worldBinormal.z, worldNormal.z);
-	#endif
+	float3 tangentWS = TransformObjectToWorldDir(input.tangentOS.xyz);
+	float3 binormalWS = cross(_2D_Normal, tangentWS) * input.tangentOS.w;
+
+	output.TtoW0 = float4(tangentWS.x, binormalWS.x, _2D_Normal.x, output.positionWS.x);
+	output.TtoW1 = float4(tangentWS.y, binormalWS.y, _2D_Normal.y, output.positionWS.y);
+	output.TtoW2 = float4(tangentWS.z, binormalWS.z, _2D_Normal.z, output.positionWS.z);
 
 	#if defined(_DETAIL_MAP)
 		output.detailUV = TransformDetailUV(input.baseUV);
@@ -86,32 +84,32 @@ void LitPassFragment (Varyings2D input,
 	#endif
 	
 	float3 normal = _2D_Normal;    //默认向前
-	// float3 perNormal = input.normalWS;
+	float3 perNormal = float3(input.TtoW0.z, input.TtoW1.z, input.TtoW2.z);
 	#if defined(_NORMAL_MAP)
-        float3 bump = GetNormalMap(config); //获取法线
-        normal = normalize(float3(dot(input.TtoW0, bump), dot(input.TtoW1, bump), dot(input.TtoW2, bump)));
+		normal = GetNormalTS(config);
+		normal = normalize(float3(dot(input.TtoW0.xyz, normal), dot(input.TtoW1.xyz, normal), dot(input.TtoW2.xyz, normal)));
 	#else
-		normal = _2D_Normal;
+		normal = normalize(perNormal);
 	#endif
 
 	float4 specularData = float4(GetMetallic(config), GetSmoothness(config), GetFresnel(config), 1);		//w赋值为1表示开启PBR
 
 	//烘焙灯光，只处理了烘焙贴图，没有处理阴影烘焙，需要注意
-	// float3 bakeColor = GetBakeDate(GI_FRAGMENT_DATA(input), positionWS, perNormal);
+	float3 bakeColor = GetBakeDate(GI_FRAGMENT_DATA(input), positionWS, perNormal);
 	float oneMinusReflectivity = OneMinusReflectivity(specularData.r);
 	float3 diffuse = base.rgb * oneMinusReflectivity;
-	float3 bakeColor = GetEmission(config);				//通过金属度缩减烘焙光，再加上自发光，之后会在着色时直接加到最后的结果上
-	// float4 shiftColor = GetShiftColor(config);			//分别使用三张图的透明通道写入
+	bakeColor = bakeColor * diffuse + GetEmission(config);				//通过金属度缩减烘焙光，再加上自发光，之后会在着色时直接加到最后的结果上
 
 	float3 reflectDir = reflect( normalize((positionWS - _WorldSpaceCameraPos)), normal);
+
 	float3 reflect = ComputeIndirectSpecular(reflectDir, positionWS);
 
-	_GBufferColorTex = float4(base.xyz, 1);
-	_GBufferNormalTex = float4(normal * 0.5 + 0.5, 1);
+	_GBufferColorTex = float4(base.xyz, 0);
+	_GBufferNormalTex = float4(normal * 0.5 + 0.5, 0);
 	_GBufferSpecularTex = specularData;
-	
+
 	_ReflectTargetTex = float4(reflect, 1);
-	_GBufferBakeTex = float4(bakeColor, 1);
+	_GBufferBakeTex = float4(bakeColor, 0);
 }
 
 #endif

@@ -15,7 +15,7 @@ Shader "Defferer/GBufferReady2D"
 
 		[Toggle(_NORMAL_MAP)] _NormalMapToggle ("Normal Map", Float) = 0
 		[NoScaleOffset] _NormalMap("Normals", 2D) = "bump" {}
-		_NormalScale("Normal Scale", Range(-1, 1)) = 1
+		_NormalScale("Normal Scale", Range(0, 3)) = 1
 
 		[NoScaleOffset] _EmissionMap("Emission", 2D) = "white" {}
 		[HDR] _EmissionColor("Emission", Color) = (0.0, 0.0, 0.0, 0.0)

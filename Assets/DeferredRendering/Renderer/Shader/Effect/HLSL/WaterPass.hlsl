@@ -93,14 +93,20 @@ void LitPassFragment (Varyings input,
     float3 noiseNor = GetNoiseNormal(input.noiseUV);
 
 	float3 reflect = ComputeIndirectSpecular(reflectDir, positionWS);
-	float3 reflect1 = ComputeIndirectSpecular(orirefDir, positionWS + noiseNor);
+	#ifdef _USE_SSR
+		float3 reflect1 = ComputeIndirectSpecular(orirefDir, positionWS);	//采集常规反射数据
+		perNormal = normalize(noiseNor + perNormal);						//调整法线
+	#else
+		float3 reflect1 = ComputeIndirectSpecular(orirefDir, positionWS + noiseNor * 5);
+	#endif
+
 
     float3 waterVal = GetWater(input.baseUV.zw);
     float4 waterCol = GetWaterCol();
 
     float3 buffCol = lerp(base.xyz, waterCol.xyz, waterVal.x);
-    float3 buffNor = lerp(normal, orirefDir, waterVal.x) * 0.5 + 0.5;
-    float4 buffSpe = lerp(specularData, float4(1, 1, 0.3, 1), waterVal.x);
+    float3 buffNor = lerp(normal, perNormal, waterVal.x) * 0.5 + 0.5;
+    float4 buffSpe = lerp(specularData, float4(1, 1, 0.3, 0), waterVal.x);
     // float4 buffSpe = float4(1, 1, 0.3, 1);
     float3 buffRef = lerp(reflect, reflect1, waterVal.x);
     float3 bakeCol = lerp(bakeColor, 0, waterVal.x);

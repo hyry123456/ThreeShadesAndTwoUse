@@ -28,16 +28,30 @@ namespace DefferedRender
         public int columnCount = 1;
         public bool particleFollowSpeed;
 
+        public bool useNearAlpha = false;
+        public float nearFadeDistance = 1;
+        public float nearFadeRange = 1;
+
+        public bool useSoftParticle = false;
+        public float softParticleDistance = 1;
+        public float softParticleRange = 1;
+
+        /// <summary> /// 是否需要开启碰撞  /// </summary>
+        public bool useCollsion;
+        [SerializeField]
+        public IGetCollsion[] collsions;    //所有碰撞器数据
 
         ParticleGroupsData[] groups;
         private ComputeBuffer particleBuffer;
         private ComputeBuffer groupBuffer;
-        private int kernel_Perframe, kernel_PerFixframe;
+        private ComputeBuffer collsionBuffer;
+
+        private int kernel_Perframe, kernel_PerFixframe, kernel_PerFixCollsion;
         [SerializeField]
         private Material material;
         float time = 0; 
-        public int index = 0;
-
+        [SerializeField]
+        int index = 0;
 
         private void Start()
         {
@@ -47,8 +61,11 @@ namespace DefferedRender
             isInsert = true;
             kernel_Perframe = compute.FindKernel("Noise_PerFrame");
             kernel_PerFixframe = compute.FindKernel("Noise_PerFixFrame");
+            kernel_PerFixCollsion = compute.FindKernel("Noise_PerFixFrameWithCollsion");
+            if (collsions == null)
+                useCollsion = false;
+            ReadyMaterial();
             ReadyBuffer();
-            material = new Material(shader);
             time = noiseData.releaseTime * 0.8f;
         }
 
@@ -61,6 +78,7 @@ namespace DefferedRender
             }
             particleBuffer?.Release();
             groupBuffer?.Release();
+            collsionBuffer?.Release();
         }
 
         private void Update()
@@ -88,25 +106,51 @@ namespace DefferedRender
             }
             SetOnCompute();
             compute.Dispatch(kernel_Perframe, groupCount, 1, 1);
+
         }
 
         private void FixedUpdate()
         {
             if (!isInsert) return;  //没有插入渲染栈就退出
             SetOnFixCompute();
-            compute.Dispatch(kernel_PerFixframe, groupCount, 1, 1);
+            compute.Dispatch(useCollsion ? kernel_PerFixCollsion :
+                kernel_PerFixframe, groupCount, 1, 1);
         }
 
+#if UNITY_EDITOR
         private void OnDrawGizmos()
         {
             if (noiseData == null)
                 return;
             Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.color = Color.yellow;
+            Gizmos.color = Color.red;
             if(noiseData.shapeMode == InitialShapeMode.Cube)
             {
                 Gizmos.DrawWireCube(Vector3.zero, noiseData.cubeRange);
             }
+        }
+#endif
+
+        private void ReadyMaterial()
+        {
+            material = new Material(shader);
+            if (useSoftParticle)
+            {
+                material.EnableKeyword("_SOFT_PARTICLE");
+                material.SetFloat("_SoftParticlesDistance", softParticleDistance);
+                material.SetFloat("_SoftParticlesRange", softParticleRange);
+            }
+            else
+                material.DisableKeyword("_SOFT_PARTICLE");
+
+            if (useNearAlpha)
+            {
+                material.EnableKeyword("_NEAR_ALPHA");
+                material.SetFloat("_NearFadeDistance", nearFadeDistance);
+                material.SetFloat("_NearFadeRange", nearFadeRange);
+            }
+            else
+                material.DisableKeyword("_NEAR_ALPHA");
         }
 
         /// <summary>  /// 创建以及初始化Buffer数据    /// </summary>
@@ -114,6 +158,7 @@ namespace DefferedRender
         {
             particleBuffer?.Release();
             groupBuffer?.Release();
+            collsionBuffer?.Release();
 
             NoiseParticleData[] particles = new NoiseParticleData[groupCount * 64];
             particleBuffer = new ComputeBuffer(particles.Length, Marshal.SizeOf<NoiseParticleData>());
@@ -137,6 +182,20 @@ namespace DefferedRender
                 };
             }
             groupBuffer.SetData(groups, 0, 0, groupCount);
+
+            if (useCollsion)
+            {
+                CollsionStruct[] collsions = new CollsionStruct[this.collsions.Length];
+                for(int i=0; i<collsions.Length; i++)
+                {
+                    collsions[i] = this.collsions[i].GetCollsionStruct();
+                }
+                collsionBuffer = new ComputeBuffer(collsions.Length,
+                    Marshal.SizeOf<CollsionStruct>());
+                collsionBuffer.SetData(collsions, 0, 0, collsions.Length);
+            }
+
+
         }
 
         /// <summary>
@@ -145,13 +204,23 @@ namespace DefferedRender
         /// </summary>
         private void SetOnFixCompute()
         {
-            compute.SetBuffer(kernel_PerFixframe, "_ParticleNoiseBuffer", particleBuffer);
+            if (useCollsion)
+            {
+                compute.SetBuffer(kernel_PerFixCollsion, "_ParticleNoiseBuffer", particleBuffer);
+                compute.SetBuffer(kernel_PerFixCollsion, "_CollsionBuffer", collsionBuffer);
+                compute.SetInt("_CollsionData", collsions.Length);
+            }
+            else
+            {
+                compute.SetBuffer(kernel_PerFixframe, "_ParticleNoiseBuffer", particleBuffer);
+            }
+
             compute.SetFloat("_Frequency", noiseData.frequency);
             compute.SetInt("_Octave", noiseData.octave);
             compute.SetFloat("_Intensity", noiseData.intensity);
             compute.SetInts("_Mode", new int[] {(int)noiseData.shapeMode,
                 (int)noiseData.speedMode, (int)noiseData.sizeBySpeedMode,
-                noiseData.isPhysical? 1 : 0});
+                noiseData.useGravity? 1 : 0});
             //compute.SetFloats("_NearData", new float[] { noiseData.nearTime, noiseData.nearRadio });
         }
 
@@ -170,7 +239,7 @@ namespace DefferedRender
                 noiseData.liveTime, 0, 0));
             compute.SetInts("_Mode", new int[] {(int)noiseData.shapeMode,
                 (int)noiseData.speedMode, (int)noiseData.sizeBySpeedMode,
-                noiseData.isPhysical? 1 : 0});
+                noiseData.useGravity? 1 : 0});
             compute.SetMatrix("_RotateMatrix", transform.localToWorldMatrix);
             compute.SetVector("_BeginSpeed", noiseData.velocityBegin);
             compute.SetVector("_SizeRange", new Vector4(
@@ -191,7 +260,6 @@ namespace DefferedRender
         public override void DrawByCamera(ScriptableRenderContext context, CommandBuffer buffer, ClustDrawType drawType, Camera camera)
         {
 
-            //buffer.SetGlobalBuffer("_ParticleNoiseBuffer", particleBuffer);
             material.SetBuffer("_ParticleNoiseBuffer", particleBuffer);
             material.SetTexture("_MainTex", mainTex);
             material.SetInt("_RowCount", rowCount);
