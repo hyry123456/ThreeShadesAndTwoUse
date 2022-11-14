@@ -49,6 +49,8 @@ namespace DefferedRender
         public float particleIntensity = 0.5f;
         [Range(0, 1f)]
         public float collsionScale = 1;
+        [Range(0, 0.1f)]
+        public float obstruction = 0.05f;
 
         [Range(1, 10)]
         public int circleBlur = 1;

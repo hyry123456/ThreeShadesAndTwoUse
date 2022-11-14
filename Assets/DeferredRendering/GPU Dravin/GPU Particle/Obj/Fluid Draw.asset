@@ -25,21 +25,22 @@ MonoBehaviour:
   particleUseGravity: 1
   groupArc: 6.28
   particleArc: 6.28
-  groupRadius: 1.14
+  groupRadius: 0.67
   particleRadius: 0.09
   groupCubeRange: {x: 1, y: 1, z: 1}
   particleCubeRange: {x: 1, y: 1, z: 1}
   groupVelocityBegin: {x: 0, y: 1, z: 0}
-  particleVelocityBegin: 0.01
+  particleVelocityBegin: 3.26
   octave: 8
   frequency: 1
   particleIntensity: 1
-  collsionScale: 0
+  collsionScale: 0.414
+  obstruction: 0
   circleBlur: 1
   cullOff: 0
   bilaterFilterFactor: 0
-  blurRadius: 1.35
-  waterCol: {r: 0, g: 0.5647059, b: 0.7490196, a: 1}
+  blurRadius: 0.98
+  waterCol: {r: 0.003921569, g: 0.4509804, b: 0.7490196, a: 1}
   maxFluidWidth: 3
   particleSize:
     serializedVersion: 2
@@ -47,16 +48,25 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 1
+      inSlope: 2
+      outSlope: 2
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
+      time: 0.91505843
+      value: 0.99278486
+      inSlope: 0.16988325
+      outSlope: 0.16988325
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1.0534668
+      value: -0.121154785
+      inSlope: 0
       outSlope: 0
       tangentMode: 0
       weightedMode: 0

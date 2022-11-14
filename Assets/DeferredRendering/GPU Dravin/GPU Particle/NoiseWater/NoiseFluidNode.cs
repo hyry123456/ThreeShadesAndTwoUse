@@ -71,13 +71,44 @@ namespace DefferedRender
         int index = 0;
         bool isInsert;
 
-        private int
+        //都是同一个Id，因此设置为静态即可,这里是material Data
+        private static int
             widthTexId = Shader.PropertyToID("FluidWidth"),
             normalTexId = Shader.PropertyToID("FluidNormalTex"),
             depthTexId = Shader.PropertyToID("FluidDepthTex"),
             tempWidthTexId = Shader.PropertyToID("TempWidthTex"),
             tempNormalTexId = Shader.PropertyToID("TempNormalTex"),
-            tempDepthTexId = Shader.PropertyToID("TempDepthTex");
+            tempDepthTexId = Shader.PropertyToID("TempDepthTex"),
+
+            bufferSizeId = Shader.PropertyToID("_CameraBufferSize"),
+            mainTexId = Shader.PropertyToID("_MainTex"),
+            normalMapId = Shader.PropertyToID("_NormalMap"),
+            rowCountId = Shader.PropertyToID("_RowCount"),
+            colCountId = Shader.PropertyToID("_ColCount"),
+            texAspectRatioId = Shader.PropertyToID("_TexAspectRatio"),
+            fluidParticleId = Shader.PropertyToID("_FluidParticle"),
+            bilaterFilterFactorId = Shader.PropertyToID("_BilaterFilterFactor"),
+            blurRadiusId = Shader.PropertyToID("_BlurRadius"),
+            waterDepthId = Shader.PropertyToID("_WaterDepth"),
+            cameraDepthId = Shader.PropertyToID("_CameraDepth"),
+            waterColorId = Shader.PropertyToID("_WaterColor"),
+            maxFluidWidthId = Shader.PropertyToID("_MaxFluidWidth"),
+            cullOffId = Shader.PropertyToID("_CullOff");
+
+
+        //compute Shader Data
+        private static int
+            fluidGroupBufferId = Shader.PropertyToID("_FluidGroup"),
+            fluidParticleBufferId = Shader.PropertyToID("_FluidParticle"),
+            collsionBufferId = Shader.PropertyToID("_CollsionBuffer"),
+            collsionDataId = Shader.PropertyToID("_CollsionData"),
+            collsionScaleId = Shader.PropertyToID("_CollsionScale"),
+            obstructionId = Shader.PropertyToID("_Obstruction"),
+            frequencyId = Shader.PropertyToID("_Frequency"),
+            octaveId = Shader.PropertyToID("_Octave"),
+            intensityId = Shader.PropertyToID("_Intensity"),
+            groupModeId = Shader.PropertyToID("_GroupMode"),
+            modeId = Shader.PropertyToID("_Mode");
 
 
         #region MaterialSetting
@@ -88,17 +119,6 @@ namespace DefferedRender
         public bool particleFollowSpeed;
         public bool useParticleNormal;      //是否使用默认法线，不是就是用法线贴图
         public bool useNormalMap;      //是否使用默认法线，不是就是用法线贴图
-
-
-        public bool useNearAlpha = false;
-        public float nearFadeDistance = 1;
-        public float nearFadeRange = 1;
-
-        public bool useSoftParticle = false;
-        public float softParticleDistance = 1;
-        public float softParticleRange = 1;
-
-
         #endregion
 
         private void Start()
@@ -249,24 +269,6 @@ namespace DefferedRender
         private void ReadyMaterial()
         {
             material = new Material(shader);
-            if (useSoftParticle)
-            {
-                material.EnableKeyword("_SOFT_PARTICLE");
-                material.SetFloat("_SoftParticlesDistance", softParticleDistance);
-                material.SetFloat("_SoftParticlesRange", softParticleRange);
-            }
-            else
-                material.DisableKeyword("_SOFT_PARTICLE");
-
-            if (useNearAlpha)
-            {
-                material.EnableKeyword("_NEAR_ALPHA");
-                material.SetFloat("_NearFadeDistance", nearFadeDistance);
-                material.SetFloat("_NearFadeRange", nearFadeRange);
-            }
-            else
-                material.DisableKeyword("_NEAR_ALPHA");
-
             if (particleFollowSpeed)
             {
                 material.EnableKeyword("_FOLLOW_SPEED");
@@ -328,19 +330,20 @@ namespace DefferedRender
         private void SetOnFixCompute()
         {
             int kernel = kernel_PerFixframe;
-            compute.SetBuffer(kernel, "_FluidGroup", groupBuffer);
-            compute.SetBuffer(kernel, "_FluidParticle", particleBuffer);
-            compute.SetBuffer(kernel, "_CollsionBuffer", collsionBuffer);
-            compute.SetInt("_CollsionData", collsions.Count);
-            compute.SetFloat("_CollsionScale", waterSetting.collsionScale);
+            compute.SetBuffer(kernel, fluidGroupBufferId, groupBuffer);
+            compute.SetBuffer(kernel, fluidParticleBufferId, particleBuffer);
+            compute.SetBuffer(kernel, collsionBufferId, collsionBuffer);
+            compute.SetInt(collsionDataId, collsions.Count);
+            compute.SetFloat(collsionScaleId, waterSetting.collsionScale);
+            compute.SetFloat(obstructionId, 1.0f - waterSetting.obstruction);
 
-            compute.SetFloat("_Frequency", waterSetting.frequency);
-            compute.SetInt("_Octave", waterSetting.octave);
-            compute.SetFloat("_Intensity", waterSetting.particleIntensity);
-            compute.SetInts("_GroupMode", new int[]
+            compute.SetFloat(frequencyId, waterSetting.frequency);
+            compute.SetInt(octaveId, waterSetting.octave);
+            compute.SetFloat(intensityId, waterSetting.particleIntensity);
+            compute.SetInts(groupModeId, new int[]
                 {(int)waterSetting.groupShapeMode, (int)waterSetting.groupSpeedMode,
                 waterSetting.groupUseGravity? 1:0});
-            compute.SetInts("_Mode", new int[] {(int)waterSetting.particleShadpeMode,
+            compute.SetInts(modeId, new int[] {(int)waterSetting.particleShadpeMode,
                 (int)waterSetting.particleSpeedMode, (int)waterSetting.sizeBySpeedMode,
                 waterSetting.particleUseGravity? 1 : 0});
         }
@@ -348,29 +351,39 @@ namespace DefferedRender
         public void IFluidDraw(ScriptableRenderContext context, CommandBuffer buffer,
             RenderTargetIdentifier[] gBuffers, int gBufferDepth, int width, int height)
         {
-            buffer.GetTemporaryRT(widthTexId, width, height, 0,
+            float pixelScale = 0.7f;
+            int bufferWidth = (int)(pixelScale * width),
+                bufferHeight = (int)(pixelScale * height);
+            buffer.GetTemporaryRT(widthTexId, bufferWidth, bufferHeight, 0,
                 FilterMode.Bilinear, RenderTextureFormat.RFloat);
-            buffer.GetTemporaryRT(normalTexId, width, height, 0,
+            buffer.GetTemporaryRT(normalTexId, bufferWidth, bufferHeight, 0,
                 FilterMode.Bilinear, RenderTextureFormat.Default);
-            buffer.GetTemporaryRT(depthTexId, width, height, 32,
+            buffer.GetTemporaryRT(depthTexId, bufferWidth, bufferHeight, 32,
+                FilterMode.Point, RenderTextureFormat.Depth);
+            buffer.GetTemporaryRT(cameraDepthId, bufferWidth, bufferHeight, 32,
                 FilterMode.Point, RenderTextureFormat.Depth);
 
-            buffer.GetTemporaryRT(tempWidthTexId, width, height, 0,
+            buffer.GetTemporaryRT(tempWidthTexId, bufferWidth, bufferHeight, 0,
                 FilterMode.Point, RenderTextureFormat.RFloat);
-            buffer.GetTemporaryRT(tempNormalTexId, width, height, 0,
+            buffer.GetTemporaryRT(tempNormalTexId, bufferWidth, bufferHeight, 0,
                 FilterMode.Point, RenderTextureFormat.Default);
-            buffer.GetTemporaryRT(tempDepthTexId, width, height, 32,
+            buffer.GetTemporaryRT(tempDepthTexId, bufferWidth, bufferHeight, 32,
                 FilterMode.Point, RenderTextureFormat.Depth);
 
-            buffer.SetGlobalTexture("_MainTex", gBufferDepth);
+            buffer.SetGlobalTexture(mainTexId, gBufferDepth);
             buffer.Blit(null, depthTexId, material, (int)FluidPass.CopyDepth);
+            //渲染时用来对比用的深度图
+            buffer.Blit(null, cameraDepthId, material, (int)FluidPass.CopyDepth);
 
-            buffer.SetGlobalTexture("_MainTex", mainTex);
-            buffer.SetGlobalTexture("_NormalMap", normalTex);
-            buffer.SetGlobalInt("_RowCount", rowCount);
-            buffer.SetGlobalInt("_ColCount", columnCount);
-            buffer.SetGlobalFloat("_TexAspectRatio", (float)mainTex.width / mainTex.height);
-            buffer.SetGlobalBuffer("_FluidParticle", particleBuffer);
+            buffer.SetGlobalTexture(mainTexId, mainTex);
+            buffer.SetGlobalTexture(normalMapId, normalTex);
+            buffer.SetGlobalInt(rowCountId, rowCount);
+            buffer.SetGlobalInt(colCountId, columnCount);
+            buffer.SetGlobalFloat(texAspectRatioId, (float)mainTex.width / mainTex.height);
+            buffer.SetGlobalBuffer(fluidParticleId, particleBuffer);
+
+            buffer.SetGlobalVector(bufferSizeId, new Vector4(
+                1f / bufferWidth, 1f / bufferHeight, bufferWidth, bufferHeight));
 
             buffer.SetRenderTarget(
                 widthTexId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
@@ -391,26 +404,23 @@ namespace DefferedRender
 
             for(int i=0; i< waterSetting.circleBlur; i++)
             {
-                buffer.SetGlobalFloat("_BilaterFilterFactor", waterSetting.bilaterFilterFactor);
-                buffer.SetGlobalVector("_BlurRadius", new Vector4(waterSetting.blurRadius, 0));
-                buffer.SetGlobalTexture("_MainTex", widthTexId);
+                buffer.SetGlobalFloat(bilaterFilterFactorId, waterSetting.bilaterFilterFactor);
+                buffer.SetGlobalVector(blurRadiusId, new Vector4(waterSetting.blurRadius, 0));
+                buffer.SetGlobalTexture(mainTexId, widthTexId);
                 buffer.Blit(null, tempWidthTexId, material, (int)FluidPass.Bilater);
-                buffer.SetGlobalTexture("_MainTex", normalTexId);
+                buffer.SetGlobalTexture(mainTexId, normalTexId);
                 buffer.Blit(null, tempNormalTexId, material, (int)FluidPass.Bilater);
-                buffer.SetGlobalTexture("_WaterDepth", depthTexId);
+                buffer.SetGlobalTexture(waterDepthId, depthTexId);
                 buffer.Blit(null, tempDepthTexId, material, (int)FluidPass.BilaterDepth);
 
-                buffer.SetGlobalVector("_BlurRadius", new Vector4(0, waterSetting.blurRadius));
-                buffer.SetGlobalTexture("_MainTex", tempNormalTexId);
+                buffer.SetGlobalVector(blurRadiusId, new Vector4(0, waterSetting.blurRadius));
+                buffer.SetGlobalTexture(mainTexId, tempNormalTexId);
                 buffer.Blit(null, normalTexId, material, (int)FluidPass.Bilater);
-                buffer.SetGlobalTexture("_MainTex", tempWidthTexId);
+                buffer.SetGlobalTexture(mainTexId, tempWidthTexId);
                 buffer.Blit(null, widthTexId, material, (int)FluidPass.Bilater);
-                buffer.SetGlobalTexture("_WaterDepth", tempDepthTexId);
+                buffer.SetGlobalTexture(waterDepthId, tempDepthTexId);
                 buffer.Blit(null, depthTexId, material, (int)FluidPass.BilaterDepth);
             }
-
-            buffer.SetGlobalTexture("_MainTex", gBufferDepth);
-            buffer.Blit(null, tempDepthTexId, material, (int)FluidPass.CopyDepth);
 
             //设置渲染目标，传递所有的渲染目标
             buffer.SetRenderTarget(
@@ -418,15 +428,15 @@ namespace DefferedRender
                 gBufferDepth
             );
 
-            buffer.SetGlobalTexture("_WaterDepth", depthTexId); 
-            buffer.SetGlobalTexture("_NormalMap", normalTexId);
-            buffer.SetGlobalTexture("_MainTex", widthTexId);
-            buffer.SetGlobalTexture("_CameraDepth", tempDepthTexId);
-            buffer.SetGlobalColor("_WaterColor", waterSetting.waterCol);
-            buffer.SetGlobalFloat("_MaxFluidWidth", waterSetting.maxFluidWidth);
-            buffer.SetGlobalFloat("_CullOff", waterSetting.cullOff);
+            buffer.SetGlobalTexture(waterDepthId, depthTexId); 
+            buffer.SetGlobalTexture(normalMapId, normalTexId);
+            buffer.SetGlobalTexture(mainTexId, widthTexId);
+            buffer.SetGlobalColor(waterColorId, waterSetting.waterCol);
+            buffer.SetGlobalFloat(maxFluidWidthId, waterSetting.maxFluidWidth);
+            buffer.SetGlobalFloat(cullOffId, waterSetting.cullOff);
 
-            //buffer.Blit(null, sourceId, material, (int)FluidPass.BlendTarget);
+
+
             buffer.DrawProcedural(
                 Matrix4x4.identity, material, (int)FluidPass.BlendTarget, 
                 MeshTopology.Quads, 6
@@ -437,10 +447,15 @@ namespace DefferedRender
             buffer.ReleaseTemporaryRT(widthTexId);
             buffer.ReleaseTemporaryRT(normalTexId);
             buffer.ReleaseTemporaryRT(depthTexId);
+            buffer.ReleaseTemporaryRT(cameraDepthId);
 
             buffer.ReleaseTemporaryRT(tempDepthTexId);
             buffer.ReleaseTemporaryRT(tempNormalTexId);
             buffer.ReleaseTemporaryRT(tempWidthTexId);
+
+            //设置回去
+            buffer.SetGlobalVector(bufferSizeId, new Vector4(
+                1f / width, 1f / height, width, height));
         }
     }
 }

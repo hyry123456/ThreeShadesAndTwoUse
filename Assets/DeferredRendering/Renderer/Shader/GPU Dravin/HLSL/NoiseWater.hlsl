@@ -48,7 +48,7 @@ ParticleIndex vert(uint id : SV_InstanceID)
 void SetParticleNormal(inout FluidFragInput outputs[4], 
     float3 begin, float3 viewDir, float paritcleLen){
 
-    float3 beginPos = begin - viewDir * paritcleLen * _TexAspectRatio * 0.3;
+    float3 beginPos = begin - viewDir * paritcleLen * _TexAspectRatio;
     // float3 beginPos = begin;
     float3 normal = normalize(outputs[0].pos.xyz - beginPos);
     float3 tangent = normalize(outputs[0].pos.xyz - outputs[1].pos.xyz);
@@ -258,9 +258,7 @@ float4 NormalFrag(FluidFragInput input) : SV_TARGET{
 }
 
 float4 WidthFrag(FluidFragInput input) : SV_TARGET{
-    Fragment fragment = GetFragment(input.pos);
     float4 color = GetBaseColor(input.uv, input.interpolation);
-    color.a *= ChangeAlpha(fragment);
     return color;
 }
 
@@ -418,7 +416,7 @@ void BlendToTargetFrag(Varyings input,
     width *= _WaterColor.w;
     _GBufferColorTex = float4(_WaterColor.xyz, width);
     _GBufferNormalTex = float4(normal, width);
-    _GBufferSpecularTex = float4(0.1, 1, 0.3, width);
+    _GBufferSpecularTex = float4(0, 0.5, 0.3, width);
 }
 
 float WriteDepth(Varyings input): SV_DEPTH

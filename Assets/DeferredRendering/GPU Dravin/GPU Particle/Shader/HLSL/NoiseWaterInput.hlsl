@@ -343,6 +343,7 @@ bool CheckCollsion(inout FluidParticle particle){
                         particle.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
                         float3 speed = mul((float3x3)collider.worldToLocal, particle.nowSpeed.xyz);
                         speed.x = -speed.x * _CollsionScale;
+                        speed.yz *= _Obstruction;
                         particle.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                     else{               //z小于x
@@ -356,6 +357,7 @@ bool CheckCollsion(inout FluidParticle particle){
 
                         float3 speed = mul((float3x3)collider.worldToLocal, particle.nowSpeed.xyz);
                         speed.z = -speed.z * _CollsionScale;
+                        speed.xy *= _Obstruction;
                         particle.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                 }
@@ -371,6 +373,7 @@ bool CheckCollsion(inout FluidParticle particle){
 
                         float3 speed = mul((float3x3)collider.worldToLocal, particle.nowSpeed.xyz);
                         speed.y = -speed.y * _CollsionScale;
+                        speed.xz *= _Obstruction;
                         particle.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                     else{               //z小于y
@@ -383,6 +386,7 @@ bool CheckCollsion(inout FluidParticle particle){
                         particle.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
                         float3 speed = mul((float3x3)collider.worldToLocal, particle.nowSpeed.xyz);
                         speed.z = -speed.z * _CollsionScale;
+                        speed.xy *= _Obstruction;
                         particle.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                 }

@@ -23,14 +23,15 @@ MonoBehaviour:
   velocityBegin: {x: 1, y: -10, z: 1}
   releaseTime: 1
   liveTime: 5
+  collsionScale: 1
   octave: 1
   frequency: 1
   intensity: 5
   useGravity: 0
   gradient:
     serializedVersion: 2
-    key0: {r: 0.5188679, g: 0.5188679, b: 0.5188679, a: 0.39215687}
-    key1: {r: 0.5660378, g: 0.5660378, b: 0.5660378, a: 0.39215687}
+    key0: {r: 0, g: 0.4429531, b: 1, a: 0.39215687}
+    key1: {r: 0, g: 0.7046976, b: 1, a: 0.39215687}
     key2: {r: 0, g: 0.13157213, b: 0.33962262, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}

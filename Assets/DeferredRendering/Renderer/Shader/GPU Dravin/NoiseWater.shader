@@ -47,7 +47,7 @@ Shader "Defferer/Fluid Draw"
         Pass
         {
             Name "Width"
-            Blend One One
+            Blend SrcAlpha One
             ZWrite Off
             ZTest On
             Cull Off
@@ -62,8 +62,6 @@ Shader "Defferer/Fluid Draw"
             
 			#pragma multi_compile _ _DEFFER_FOG
 
-            #pragma shader_feature  _NEAR_ALPHA
-            #pragma shader_feature  _SOFT_PARTICLE
             #pragma shader_feature _FOLLOW_SPEED
             // #pragma shader_feature _PARTICLE_NORMAL
             // #pragma shader_feature _NORMAL_MAP

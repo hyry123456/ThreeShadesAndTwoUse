@@ -27,6 +27,7 @@ RWStructuredBuffer<CollsionStruct> _CollsionBuffer;            //该粒子可以
 
 uint _CollsionData;    //碰撞体数量，为0表示不碰撞
 float _CollsionScale;   //碰撞后的大小缩放
+float _Obstruction;     //阻力
 
 float _Arc;         //设置的角度，圆形初始化位置时用到该数据
 float _Radius;      //球的半径
