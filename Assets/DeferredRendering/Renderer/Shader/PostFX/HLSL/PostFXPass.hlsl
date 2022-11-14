@@ -141,9 +141,9 @@ float4 DrawGBufferColorFragment(Varyings i) : SV_Target
 
     BRDF brdf = GetBRDF(surface);
 
-
+	float4 ref = SAMPLE_TEXTURE2D(_ReflectTargetTex, sampler_linear_clamp, i.screenUV);
     float3 color;
-    if(specular.w > 0.0){
+    if(ref.w > 0.0){
 		float3 uv_Depth = float3(i.screenUV, eyeDepth);
         color = GetGBufferLight(surface, brdf, uv_Depth);
 		float3 reflect = ReflectLod(i.screenUV, 1.0 - surface.smoothness);

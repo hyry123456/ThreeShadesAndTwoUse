@@ -57,11 +57,6 @@ void Noise_PerFrame(int3 gid : SV_GroupID, int index : SV_GroupIndex)
         _GroupControlBuffer[gid.x] = group;
     }
 
-
-
-
-
-
     //根据模式进行该粒子的位置设置
     switch(group.currentMode.x){
         case 0:
@@ -75,32 +70,6 @@ void Noise_PerFrame(int3 gid : SV_GroupID, int index : SV_GroupIndex)
 
     }
     _ParticleNoiseBuffer[objIndex] = particle;
-
-    // //粒子组，不需要初始化释放，到时间直接释放
-    // float randomTime = abs(random(particle.random.z));
-    // //获得该粒子的开始时间
-    // float parBeginTime = group.dieTime.x - _LifeTime.x * randomTime - _LifeTime.y;
-    // //该粒子已经存活的时间
-    // float parLiveTime = _Time.x  - parBeginTime;
-    // //粒子已经存活的时间大于最大存活时间，或者还没到开始时间
-    // if(parLiveTime >= _LifeTime.y || _Time.x < parBeginTime){
-    //     particle.index.y = 0;   //标记为死亡
-    //     _ParticleNoiseBuffer[objIndex] = particle;
-    //     return;
-    // }
-
-    // //--------------------开始准备粒子--------------------------------
-    // //粒子第一次初始化，进行初始化
-    // if(particle.index.y == 0){
-    //     InitialParticle(particle);
-    // }
-    // else{
-    //     UpdateParticle(particle, index, gid.x * 64, parLiveTime);
-    // }
-
-    // //粒子输出数据准备
-    // OutParticle(parLiveTime, particle);
-    // _ParticleNoiseBuffer[objIndex] = particle;
 }
 
 #pragma kernel Noise_PerFixFrame

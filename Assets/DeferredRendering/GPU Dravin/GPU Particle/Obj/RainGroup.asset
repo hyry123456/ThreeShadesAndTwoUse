@@ -18,7 +18,7 @@ MonoBehaviour:
   particleSpeedMode: 4
   sizeBySpeedMode: 0
   speedRange: {x: 0, y: 1}
-  sizeRange: {x: 0.1, y: 0.1}
+  sizeRange: {x: 0.1, y: 16.18}
   groupUseGravity: 1
   particleUseGravity: 1
   groupArc: 6.28

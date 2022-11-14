@@ -20,7 +20,6 @@ namespace DefferedRender
 
         public Shader cameraShader;
 
-
         public FogSetting fogSetting;
     }
 

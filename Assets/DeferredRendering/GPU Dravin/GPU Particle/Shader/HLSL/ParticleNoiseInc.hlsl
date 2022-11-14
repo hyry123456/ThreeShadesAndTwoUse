@@ -252,7 +252,6 @@ bool CheckCollsion(inout NoiseParticleData input){
                     input.worldPos = normalize(-duration) * collider.radius + collider.center;
                     return true;
                 }
-
                 break;
             default:    //盒子碰撞
                 //判断是否超过盒子范围
@@ -311,7 +310,6 @@ bool CheckCollsion(inout NoiseParticleData input){
                         input.nowSpeed.z = -input.nowSpeed.z * _CollsionScale;
                     }
                 }
-                // input.nowSpeed = input.nowSpeed * 0.9;
                 return true;
         }
     }

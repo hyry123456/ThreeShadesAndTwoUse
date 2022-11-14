@@ -8,6 +8,7 @@ TEXTURE2D(_MainTex);
 TEXTURE2D(_DistortionTex);
 SAMPLER(sampler_MainTex);
 float4 _MainTex_ST;
+float4 _MainTex_TexelSize;
 
 //由于本身是使用DrawProcedural，没有必要GPU实例化
 CBUFFER_START(UnityPerMaterial)

@@ -1,27 +1,36 @@
-#ifndef PARTICLE_NOISE_GROUP_INCLUDE
-#define PARTICLE_NOISE_GROUP_INCLUDE
+#ifndef NOISE_WATER_INPUT
+#define NOISE_WATER_INPUT
 
 #include "ParticleNoiseInc.hlsl"
 
-//由组进行管理的粒子
-struct GroupControlParticle{
-    float dieTime;    //死亡时间
-    // //初始化模式,x:粒子组结束模式
-    // int3 initialMode;
-    //当前模式,x:状态标记(0是未启用,1是组阶段,2是粒子阶段)
-    int3 currentMode;
-    //世界坐标,随机数用第一个粒子的，避免并行错误
+//大水珠需要的数据
+struct FluidGroup{
     float3 worldPos;
-    //当前速度，初始化方式同上
-    float3 currentSpeed;
+    float3 nowSpeed;
+    //0是未初始化，1是group，2是非组
+    int mode;
+    float dieTime;  //死亡时间
 };
 
-//粒子组控制需要的数据
-RWStructuredBuffer<GroupControlParticle> _GroupControlBuffer;
+//液体粒子需要的数据
+struct FluidParticle{
+    float3 worldPos;
+    float3 nowSpeed;
+    float3 random;
+    float size;
+    //0为使用，1:组阶段，2：自由粒子
+    int mode;
+    float4 uvTransData;     //uv动画需要的数据
+    float interpolation;    //插值需要的数据
+};
+
+RWStructuredBuffer<FluidGroup> _FluidGroup;
+RWStructuredBuffer<FluidParticle> _FluidParticle;
+
 
 //粒子模式, X为位置初始化模式，Y是速度初始化模式，Z是输出模式，W为是否需要物理模拟
 // int4 _Mode;，这个控制的是单个粒子的行为，不控制粒子组的行为
-int4 _GroupMode;        //x是组的位置初始化模式，Y是速度初始化模式, z是组是否应用重力,w为是否碰撞后取消组
+int3 _GroupMode;        //x是组的位置初始化模式，Y是速度初始化模式, z是组是否应用重力
 
 float _GroupArc;
 float _GroupRadius;
@@ -30,12 +39,12 @@ float3 _GroupCubeRange;
 float _ParticleBeginSpeed;      //单个粒子释放时的速度，只表示速度而已
 
 //噪声数据先统一先，不补充噪声设置
-//_LifeTime，x：组最大持续时间(超过就标记为死亡)，Y:粒子释放的存活时间
+//_LifeTime，X:粒子释放的存活时间
 
-float4 _GroupColors[_COUNT];  //颜色计算用的数据
-float4 _GroupAlphas[_COUNT];  //透明度计算用的数据
-float4 _GroupSizes[_COUNT];  //大小
-float _GroupIntensity;  //组的噪声强度
+// float4 _GroupColors[_COUNT];  //颜色计算用的数据
+// float4 _GroupAlphas[_COUNT];  //透明度计算用的数据
+// float4 _GroupSizes[_COUNT];  //大小
+// float _GroupIntensity;  //组的噪声强度
 
 
 //初始化组位置，也就是确定该组粒子的起始位置
@@ -72,12 +81,12 @@ float3 GetGroupBeginSpeed(float random, float3 beginPos){
     }
 }
 
-void InitialGroup(inout GroupControlParticle group, float3 random){
+void InitialGroup(inout FluidGroup group, float3 random){
     group.worldPos = GetGroupBeginPos(random);      //初始化位置
     float random2 = (random.x + random.y + random.z)/3.0;
-    group.currentSpeed = GetGroupBeginSpeed(random2, group.worldPos);       //初始化速度
+    group.nowSpeed = GetGroupBeginSpeed(random2, group.worldPos);       //初始化速度
     // group.currentSpeed = float3(0, 10, 0);       //初始化速度
-    group.currentMode.x = 1;        //进入组阶段
+    group.mode = 1;        //进入组阶段
 }
 
 //确定单个粒子的位置偏移值
@@ -93,42 +102,39 @@ float3 GetControlParticleBeginPos(float3 random){
 }
 
 //在组周围初始化粒子
-void InitialParticleBesideGroup(inout NoiseParticleData particle, GroupControlParticle group){
+void InitialParticleBesideGroup(inout FluidParticle particle, FluidGroup group){
     //在组的位置周围进行位置初始化
     particle.worldPos = group.worldPos + GetControlParticleBeginPos(particle.random.xyz);
-    particle.nowSpeed = group.currentSpeed;     //粒子速度为组速度即可
-    particle.index.y = 1;       //标记为使用了，这里的1是组粒子标记，此时只需要进行组判断
+    particle.nowSpeed = group.nowSpeed;     //粒子速度为组速度即可
+    particle.mode = 1;       //标记为使用了，这里的1是组粒子标记，此时只需要进行组判断
     
-    float time_01 = (_Time.x - (group.dieTime - _LifeTime.y - _LifeTime.x)) / _LifeTime.x;
-
-    //计算颜色数据，暂时全部都是一开始的状态
+    float time_01 = (_Time.x - (group.dieTime - _LifeTime.x)) / _LifeTime.x;
     AnimateUVData uvData = AnimateUV(time_01);
     particle.uvTransData = uvData.uvData;
     particle.interpolation = uvData.interpolation;
-    particle.color = float4(LoadColor(time_01, _GroupColors), LoadAlpha(time_01, _GroupAlphas));
 
     //大小
     float size01;
     switch (_Mode.z) {      //枚举单个粒子大小模式
     case 1 :
-        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.x)), _GroupSizes);
+        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.x)));
         break;
     case 2 :
-        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.y)), _GroupSizes);
+        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.y)));
         break;
     case 3:
-        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.z)), _GroupSizes);
+        size01 = LoadSize(smoothstep(_SizeRange.z, _SizeRange.w, abs(particle.nowSpeed.z)));
         break;
     default :
-        size01 = LoadSize(time_01, _GroupSizes);
+        size01 = LoadSize(time_01);
         break;
     }
     particle.size = lerp(_SizeRange.x, _SizeRange.y, size01);
+    // particle.size = 1;
 }
 
 //只有粒子的第一次速度初始化，
 float3 GetFreedomBeginSpeed(float random, float3 currentPos, float3 oriSpeed, float3 oriPos){
-
     float speed = random * _ParticleBeginSpeed;    //根据速度大小确定一个随机速度
     float3 normal = normalize(oriSpeed);
     float3 direct = normalize(currentPos - oriPos);
@@ -142,31 +148,25 @@ float3 GetFreedomBeginSpeed(float random, float3 currentPos, float3 oriSpeed, fl
         case 4:     //离开起始位置的速度，也就是从中间往外面跑
             return direct * speed;
         default:    //默认模式,传入速度就是初始化速度
-            return oriSpeed;
+            return oriSpeed * speed;
     }
 }
 
 //粒子不再呆在组旁边，开始自由移动
-void OnFreedomParticle(inout NoiseParticleData particle, GroupControlParticle group){
-
-    if(particle.random.w > _LifeTime.y){        //判断是否超时
-        particle.index.y = 0;
-        return;
-    }
-
-    if(particle.index.y < 2){      //第一次释放，需要进行粒子速度初始化
+void OnFreedomParticle(inout FluidParticle particle, FluidGroup group){
+    
+    if(particle.mode < 2){      //第一次释放，需要进行粒子速度初始化
         float random = (particle.random.x + particle.random.y + particle.random.z)/3.0;
-        particle.nowSpeed = GetFreedomBeginSpeed(random, particle.worldPos, group.currentSpeed, group.worldPos);
+        particle.nowSpeed = GetFreedomBeginSpeed(random, 
+            particle.worldPos, group.nowSpeed, group.worldPos);
     }
-    particle.index.y = 2;       //标记为真正进入组阶段，可以进行自由移动了
+    particle.mode = 2;       //标记为真正进入组阶段，可以进行自由移动了
     particle.worldPos += particle.nowSpeed * _Time.y;      //更新位置
-    particle.random.w += _Time.y;   //增加时间
 
-    float time_01 = particle.random.w / _LifeTime.y;
+    float time_01 = (_Time.x - (group.dieTime - _LifeTime.x)) / _LifeTime.x;
     AnimateUVData uvData = AnimateUV(time_01);
     particle.uvTransData = uvData.uvData;
     particle.interpolation = uvData.interpolation;
-    particle.color = float4(LoadColor(time_01), LoadAlpha(time_01));
 
     float size01;
     switch (_Mode.z) {      //枚举单个粒子大小模式
@@ -184,14 +184,15 @@ void OnFreedomParticle(inout NoiseParticleData particle, GroupControlParticle gr
         break;
     }
     particle.size = lerp(_SizeRange.x, _SizeRange.y, size01);
+    // particle.size = 1;
 }
 
 //更新组粒子的速度
-void UpdataGroupSpeed(inout GroupControlParticle group, float3 random){
-    group.currentSpeed += CurlNoise3D(group.worldPos * random.xyz * _Frequency, _Octave) * _GroupIntensity * _Time.z;
+void UpdataGroupSpeed(inout FluidGroup group, float3 random){
+    group.nowSpeed += CurlNoise3D(group.worldPos * random.xyz * _Frequency, _Octave) * _Intensity * _Time.z;
 }
 
-bool CheckCollsion(inout GroupControlParticle group){
+bool CheckCollsion(inout FluidGroup group){
     for(uint i = 0; i < _CollsionData; i++){
         CollsionStruct collider = _CollsionBuffer[i];
         switch(collider.mode){
@@ -200,8 +201,8 @@ bool CheckCollsion(inout GroupControlParticle group){
                 float len = length(duration);
                 if(len <= collider.radius){
                     float3 forceDir = normalize(-duration);
-                    float3 force = dot(group.currentSpeed, group.currentSpeed) * forceDir;
-                    group.currentSpeed += force * _Time.z;
+                    float3 force = dot(group.nowSpeed, group.nowSpeed) * forceDir;
+                    group.nowSpeed += force * _Time.z;
                     group.worldPos = normalize(-duration) * collider.radius + collider.center;
                     return true;
                 }
@@ -238,14 +239,14 @@ bool CheckCollsion(inout GroupControlParticle group){
                             group.worldPos.x = boxMin.x;
                         else
                             group.worldPos.x = boxMax.x;
-                        group.currentSpeed.x = -group.currentSpeed.x;
+                        group.nowSpeed.x = -group.nowSpeed.x;
                     }
                     else{               //z小于x
                         if(group.worldPos.z < collider.center.z)
                             group.worldPos.z = boxMin.z;
                         else
                             group.worldPos.z = boxMax.z;
-                        group.currentSpeed.z = -group.currentSpeed.z;
+                        group.nowSpeed.z = -group.nowSpeed.z;
                     }
                 }
                 else{           //y小于x
@@ -254,20 +255,103 @@ bool CheckCollsion(inout GroupControlParticle group){
                             group.worldPos.y = boxMin.y;
                         else
                             group.worldPos.y = boxMax.y;
-                        group.currentSpeed.y = -group.currentSpeed.y;
+                        group.nowSpeed.y = -group.nowSpeed.y;
                     }
                     else{               //z小于y
                         if(group.worldPos.z < collider.center.z)
                             group.worldPos.z = boxMin.z;
                         else
                             group.worldPos.z = boxMax.z;
-                        group.currentSpeed.z = -group.currentSpeed.z;
+                        group.nowSpeed.z = -group.nowSpeed.z;
                     }
                 }
                 return true;
         }
     }
     return false;
+}
+
+bool CheckCollsion(inout FluidParticle particle){
+    for(uint i = 0; i < _CollsionData; i++){
+        CollsionStruct collider = _CollsionBuffer[i];
+        switch(collider.mode){
+            case 1:     //球型模式
+                float3 duration = collider.center - particle.worldPos;
+                float len = length(duration);
+                if(len <= collider.radius){
+                    float3 forceDir = normalize(-duration);
+                    float3 force = dot(particle.nowSpeed, particle.nowSpeed) * forceDir;
+                    particle.nowSpeed += force * _Time.z;
+                    particle.worldPos = normalize(-duration) * collider.radius + collider.center;
+                    return true;
+                }
+                break;
+            default:    //盒子碰撞
+                //判断是否超过盒子范围
+                float3 boxMax = collider.center + collider.offset;
+                float3 boxMin = collider.center - collider.offset;
+                float3 currentPos = particle.worldPos;
+                float3 absDir = 0;
+                if(currentPos.x < boxMax.x){
+                    if(currentPos.x < boxMin.x)
+                        break;
+                    absDir.x = collider.offset.x - abs(currentPos.x - collider.center.x);
+                }
+                else break;
+                if(currentPos.y < boxMax.y){
+                    if(currentPos.y < boxMin.y)
+                        break;
+                    absDir.y = collider.offset.y - abs(currentPos.y - collider.center.y);
+                }
+                else break;
+                if(currentPos.z < boxMax.z){
+                    if(currentPos.z < boxMin.z)
+                        break;
+                    absDir.z = collider.offset.z - abs(currentPos.z - collider.center.z);
+                }
+                else break;
+
+                //到达这里就是已经发生碰撞了
+                if(absDir.x < absDir.y){        //x小于y
+                    if(absDir.x < absDir.z){    //x小于z
+                        if(particle.worldPos.x < collider.center.x)
+                            particle.worldPos.x = boxMin.x;
+                        else
+                            particle.worldPos.x = boxMax.x;
+                        particle.nowSpeed.x = -particle.nowSpeed.x * _CollsionScale;
+                    }
+                    else{               //z小于x
+                        if(particle.worldPos.z < collider.center.z)
+                            particle.worldPos.z = boxMin.z;
+                        else
+                            particle.worldPos.z = boxMax.z;
+                        particle.nowSpeed.z = -particle.nowSpeed.z * _CollsionScale;
+                    }
+                }
+                else{           //y小于x
+                    if(absDir.y < absDir.z){    //y小于z
+                        if(particle.worldPos.y < collider.center.y)
+                            particle.worldPos.y = boxMin.y;
+                        else
+                            particle.worldPos.y = boxMax.y;
+                        particle.nowSpeed.y = -particle.nowSpeed.y * _CollsionScale;
+                    }
+                    else{               //z小于y
+                        if(particle.worldPos.z < collider.center.z)
+                            particle.worldPos.z = boxMin.z;
+                        else
+                            particle.worldPos.z = boxMax.z;
+                        particle.nowSpeed.z = -particle.nowSpeed.z * _CollsionScale;
+                    }
+                }
+                return true;
+        }
+    }
+    return false;
+}
+
+void UpdataSpeed(inout FluidParticle input){
+    input.nowSpeed += CurlNoise3D(input.worldPos * input.random.xyz * _Frequency, _Octave) * _Intensity * _Time.z;
 }
 
 

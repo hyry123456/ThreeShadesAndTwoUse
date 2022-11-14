@@ -560,6 +560,7 @@ namespace DefferedRender
 			buffer.SetGlobalColor(splitToningHighlightsId, splitToning.highlights);
 		}
 
+
 		/// <summary>        /// 进行纹理绘制        /// </summary>
 		/// <param name="from">根据纹理</param>
 		/// <param name="to">目标纹理</param>

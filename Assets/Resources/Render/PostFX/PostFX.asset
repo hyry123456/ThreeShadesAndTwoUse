@@ -17,7 +17,7 @@ MonoBehaviour:
   ssrSetting:
     useSSR: 1
     rayMarchingSetp: 36
-    marchSetpSize: 4.3
+    marchSetpSize: 1
     maxMarchDistance: 500
     depthThickness: 1
     bilaterFilterFactor: 0.139
@@ -64,7 +64,7 @@ MonoBehaviour:
     fixedDroplet: 0.298
     dropletSize: 0.03
     speed: 0.242
-    useStickWater: 1
+    useStickWater: 0
   depthOfField:
     focusDistance: 23.7
     focusRange: 100

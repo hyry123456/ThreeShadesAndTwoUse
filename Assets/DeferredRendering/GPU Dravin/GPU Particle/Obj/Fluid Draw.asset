@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f8960b6962deab489b3c69962a35c23, type: 3}
+  m_Name: Fluid Draw
+  m_EditorClassIdentifier: 
+  releaseTime: 0.1
+  sustainTime: 10
+  groupShapeMode: 1
+  particleShadpeMode: 1
+  groupSpeedMode: 0
+  particleSpeedMode: 4
+  sizeBySpeedMode: 0
+  speedRange: {x: 0, y: 1}
+  sizeRange: {x: 0.2, y: 0.2}
+  groupUseGravity: 1
+  particleUseGravity: 1
+  groupArc: 6.28
+  particleArc: 6.28
+  groupRadius: 0.58
+  particleRadius: 0.09
+  groupCubeRange: {x: 1, y: 1, z: 1}
+  particleCubeRange: {x: 1, y: 1, z: 1}
+  groupVelocityBegin: {x: 0, y: 1, z: 0}
+  particleVelocityBegin: 7
+  octave: 8
+  frequency: 1
+  particleIntensity: 1
+  collsionScale: 0.36
+  circleBlur: 1
+  cullOff: 0
+  bilaterFilterFactor: 0
+  blurRadius: 0.42
+  waterCol: {r: 0, g: 0.71692944, b: 1, a: 1}
+  maxFluidWidth: 3
+  particleSize:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

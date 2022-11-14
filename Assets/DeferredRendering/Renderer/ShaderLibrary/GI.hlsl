@@ -164,6 +164,10 @@ float3 GetBakeDate(float2 lightMapUV, float3 positionWS, float3 normalWS){
 	return SampleLightMap(lightMapUV) + SampleLightProbe(positionWS, normalWS);
 }
 
+float4 GetReflect(float2 screenUV){
+	return SAMPLE_TEXTURE2D(_SSSTargetTex, sampler_SSSTargetTex, screenUV);
+}
+
 float3 ReflectLod(float2 screenUV, float roughness)
 {
 	float i = _SSSTargetTex_TexelSize.x * roughness * 2;

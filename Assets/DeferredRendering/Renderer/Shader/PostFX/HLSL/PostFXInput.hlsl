@@ -156,8 +156,8 @@ bool screenSpaceRayMarching(float3 rayOri, float3 rayDir, inout float2 hitScreen
     float random = random( (rayDir.x + rayOri.z + rayOri.y + rayOri.x) * 1000);
     // float random = 1;
 
-    dq *= lerp(0.9, 1, random);
-    dk *= lerp(0.9, 1, random);
+    dq *= lerp(0.95, 1, random);
+    dk *= lerp(0.95, 1, random);
 
     // UNITY_UNROLL
     for(int i = 0; i < _MaxRayMarchingStep; i++)

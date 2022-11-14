@@ -10,9 +10,7 @@ namespace DefferedRender
         public float dieTime;
     };
 
-    /// <summary>
-    /// 粒子噪声类，用来绘制单个复杂效果的粒子
-    /// </summary>
+    /// <summary>/// 粒子噪声类，用来绘制单个复杂效果的粒子/// </summary>
     public class NoiseParticleNode : GPUDravinBase
     {
         private bool isInsert = false;

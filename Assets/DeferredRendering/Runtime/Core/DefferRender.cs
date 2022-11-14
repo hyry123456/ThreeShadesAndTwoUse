@@ -84,6 +84,7 @@ namespace DefferedRender
 
         //int sssPyramidId;
         PostFXStack postFXStack = new PostFXStack();
+        //最终存储所有GBuffer的数组
         RenderTargetIdentifier[] gBuffers;
         int width, height;
         public DefferRender(Shader shader)
@@ -330,6 +331,8 @@ namespace DefferedRender
 
             //渲染GPU驱动的标准PBR数据
             GPUDravinDrawStack.Instance.DrawPreSSS(context, buffer, camera);
+
+
             ExecuteBuffer();
         }
 
@@ -348,6 +351,8 @@ namespace DefferedRender
 
             //绘制天空盒
             context.DrawSkybox(camera);
+            FluidDrawStack.Instance.BeginDrawFluid(context, buffer,
+                gBuffers, gBufferDepthId, width, height);
 
             //用上一帧的颜色值作为当前的颜色贴图
             buffer.SetGlobalTexture("PerFrameFinalTexture", preFrameFinalTex);
