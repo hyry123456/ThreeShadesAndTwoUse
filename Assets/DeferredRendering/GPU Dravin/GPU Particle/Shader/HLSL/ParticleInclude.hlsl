@@ -13,6 +13,8 @@ struct CollsionStruct
     float3 center;
     float3 offset;      //碰撞偏移，只从中间往四周偏移
     int mode;           //模式
+    float4x4 localToWorld;
+    float4x4 worldToLocal;
 };
 #define random(seed) sin(seed * 641.5467987313875 + 1.943856175)
 

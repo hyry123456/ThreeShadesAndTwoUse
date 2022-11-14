@@ -208,60 +208,81 @@ bool CheckCollsion(inout GroupControlParticle group){
                 break;
             default:    //盒子碰撞
                 //判断是否超过盒子范围
-                float3 boxMax = collider.center + collider.offset;
-                float3 boxMin = collider.center - collider.offset;
-                float3 currentPos = group.worldPos;
+                float3 boxMax = collider.offset;
+                float3 boxMin = -collider.offset;
+                float3 currentPos = mul(collider.worldToLocal, float4(group.worldPos, 1)).xyz;
                 float3 absDir = 0;
                 if(currentPos.x < boxMax.x){
                     if(currentPos.x < boxMin.x)
                         break;
-                    absDir.x = collider.offset.x - abs(currentPos.x - collider.center.x);
+                    absDir.x = collider.offset.x - abs(currentPos.x);
                 }
                 else break;
                 if(currentPos.y < boxMax.y){
                     if(currentPos.y < boxMin.y)
                         break;
-                    absDir.y = collider.offset.y - abs(currentPos.y - collider.center.y);
+                    absDir.y = collider.offset.y - abs(currentPos.y);
                 }
                 else break;
                 if(currentPos.z < boxMax.z){
                     if(currentPos.z < boxMin.z)
                         break;
-                    absDir.z = collider.offset.z - abs(currentPos.z - collider.center.z);
+                    absDir.z = collider.offset.z - abs(currentPos.z);
                 }
                 else break;
 
-                //到达这里就是已经发生碰撞了
                 if(absDir.x < absDir.y){        //x小于y
                     if(absDir.x < absDir.z){    //x小于z
-                        if(group.worldPos.x < collider.center.x)
-                            group.worldPos.x = boxMin.x;
-                        else
-                            group.worldPos.x = boxMax.x;
-                        group.currentSpeed.x = -group.currentSpeed.x;
+                        if(currentPos.x < 0){
+                            currentPos.x = boxMin.x;
+                        }
+                        else{
+                            currentPos.x = boxMax.x;
+                        }
+                        group.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+                        float3 speed = mul((float3x3)collider.worldToLocal, group.currentSpeed.xyz);
+                        speed.x = -speed.x * _CollsionScale;
+                        group.currentSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                     else{               //z小于x
-                        if(group.worldPos.z < collider.center.z)
-                            group.worldPos.z = boxMin.z;
-                        else
-                            group.worldPos.z = boxMax.z;
-                        group.currentSpeed.z = -group.currentSpeed.z;
+                        if(currentPos.z < 0){
+                            currentPos.z = boxMin.z;
+                        }
+                        else{
+                            currentPos.z = boxMax.z;
+                        }
+                        group.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+
+                        float3 speed = mul((float3x3)collider.worldToLocal, group.currentSpeed.xyz);
+                        speed.z = -speed.z * _CollsionScale;
+                        group.currentSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                 }
                 else{           //y小于x
                     if(absDir.y < absDir.z){    //y小于z
-                        if(group.worldPos.y < collider.center.y)
-                            group.worldPos.y = boxMin.y;
-                        else
-                            group.worldPos.y = boxMax.y;
-                        group.currentSpeed.y = -group.currentSpeed.y;
+                        if(currentPos.y < 0){
+                            currentPos.y = boxMin.y;
+                        }
+                        else{
+                            currentPos.y = boxMax.y;
+                        }
+                        group.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+
+                        float3 speed = mul((float3x3)collider.worldToLocal, group.currentSpeed.xyz);
+                        speed.y = -speed.y * _CollsionScale;
+                        group.currentSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                     else{               //z小于y
-                        if(group.worldPos.z < collider.center.z)
-                            group.worldPos.z = boxMin.z;
-                        else
-                            group.worldPos.z = boxMax.z;
-                        group.currentSpeed.z = -group.currentSpeed.z;
+                        if(currentPos.z < 0){
+                            currentPos.z = boxMin.z;
+                        }
+                        else{
+                            currentPos.z = boxMax.z;
+                        }
+                        group.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+                        float3 speed = mul((float3x3)collider.worldToLocal, group.currentSpeed.xyz);
+                        speed.z = -speed.z * _CollsionScale;
+                        group.currentSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                 }
                 return true;

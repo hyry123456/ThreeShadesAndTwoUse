@@ -346,18 +346,18 @@ namespace DefferedRender
         public void IFluidDraw(ScriptableRenderContext context, CommandBuffer buffer,
             RenderTargetIdentifier[] gBuffers, int gBufferDepth, int width, int height)
         {
-            buffer.GetTemporaryRT(widthTexId, width / 2, height / 2, 0,
+            buffer.GetTemporaryRT(widthTexId, width, height, 0,
                 FilterMode.Bilinear, RenderTextureFormat.RFloat);
-            buffer.GetTemporaryRT(normalTexId, width / 2, height / 2, 0,
+            buffer.GetTemporaryRT(normalTexId, width, height, 0,
                 FilterMode.Bilinear, RenderTextureFormat.Default);
-            buffer.GetTemporaryRT(depthTexId, width / 2, height / 2, 32,
+            buffer.GetTemporaryRT(depthTexId, width, height, 32,
                 FilterMode.Point, RenderTextureFormat.Depth);
 
-            buffer.GetTemporaryRT(tempWidthTexId, width / 2, height / 2, 0,
+            buffer.GetTemporaryRT(tempWidthTexId, width, height, 0,
                 FilterMode.Point, RenderTextureFormat.RFloat);
-            buffer.GetTemporaryRT(tempNormalTexId, width / 2, height / 2, 0,
+            buffer.GetTemporaryRT(tempNormalTexId, width, height, 0,
                 FilterMode.Point, RenderTextureFormat.Default);
-            buffer.GetTemporaryRT(tempDepthTexId, width / 2, height / 2, 32,
+            buffer.GetTemporaryRT(tempDepthTexId, width, height, 32,
                 FilterMode.Point, RenderTextureFormat.Depth);
 
             buffer.SetGlobalTexture("_MainTex", gBufferDepth);

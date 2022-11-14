@@ -255,59 +255,81 @@ bool CheckCollsion(inout NoiseParticleData input){
                 break;
             default:    //盒子碰撞
                 //判断是否超过盒子范围
-                float3 boxMax = collider.center + collider.offset;
-                float3 boxMin = collider.center - collider.offset;
-                float3 currentPos = input.worldPos;
+                float3 boxMax = collider.offset;
+                float3 boxMin = -collider.offset;
+                float3 currentPos = mul(collider.worldToLocal, float4(input.worldPos, 1)).xyz;
                 float3 absDir = 0;
                 if(currentPos.x < boxMax.x){
                     if(currentPos.x < boxMin.x)
                         break;
-                    absDir.x = collider.offset.x - abs(currentPos.x - collider.center.x);
+                    absDir.x = collider.offset.x - abs(currentPos.x);
                 }
                 else break;
                 if(currentPos.y < boxMax.y){
                     if(currentPos.y < boxMin.y)
                         break;
-                    absDir.y = collider.offset.y - abs(currentPos.y - collider.center.y);
+                    absDir.y = collider.offset.y - abs(currentPos.y);
                 }
                 else break;
                 if(currentPos.z < boxMax.z){
                     if(currentPos.z < boxMin.z)
                         break;
-                    absDir.z = collider.offset.z - abs(currentPos.z - collider.center.z);
+                    absDir.z = collider.offset.z - abs(currentPos.z);
                 }
                 else break;
 
                 if(absDir.x < absDir.y){        //x小于y
                     if(absDir.x < absDir.z){    //x小于z
-                        if(input.worldPos.x < collider.center.x)
-                            input.worldPos.x = boxMin.x;
-                        else
-                            input.worldPos.x = boxMax.x;
-                        input.nowSpeed.x = -input.nowSpeed.x * _CollsionScale;
+                        if(currentPos.x < 0){
+                            currentPos.x = boxMin.x;
+                        }
+                        else{
+                            currentPos.x = boxMax.x;
+                        }
+                        input.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+                        float3 speed = mul((float3x3)collider.worldToLocal, input.nowSpeed.xyz);
+                        speed.x = -speed.x * _CollsionScale;
+                        input.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                     else{               //z小于x
-                        if(input.worldPos.z < collider.center.z)
-                            input.worldPos.z = boxMin.z;
-                        else
-                            input.worldPos.z = boxMax.z;
-                        input.nowSpeed.z = -input.nowSpeed.z * _CollsionScale;
+                        if(currentPos.z < 0){
+                            currentPos.z = boxMin.z;
+                        }
+                        else{
+                            currentPos.z = boxMax.z;
+                        }
+                        input.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+
+                        float3 speed = mul((float3x3)collider.worldToLocal, input.nowSpeed.xyz);
+                        speed.z = -speed.z * _CollsionScale;
+                        input.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                 }
                 else{           //y小于x
                     if(absDir.y < absDir.z){    //y小于z
-                        if(input.worldPos.y < collider.center.y)
-                            input.worldPos.y = boxMin.y;
-                        else
-                            input.worldPos.y = boxMax.y;
-                        input.nowSpeed.y = -input.nowSpeed.y * _CollsionScale;
+                        if(currentPos.y < 0){
+                            currentPos.y = boxMin.y;
+                        }
+                        else{
+                            currentPos.y = boxMax.y;
+                        }
+                        input.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+
+                        float3 speed = mul((float3x3)collider.worldToLocal, input.nowSpeed.xyz);
+                        speed.y = -speed.y * _CollsionScale;
+                        input.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                     else{               //z小于y
-                        if(input.worldPos.z < collider.center.z)
-                            input.worldPos.z = boxMin.z;
-                        else
-                            input.worldPos.z = boxMax.z;
-                        input.nowSpeed.z = -input.nowSpeed.z * _CollsionScale;
+                        if(currentPos.z < 0){
+                            currentPos.z = boxMin.z;
+                        }
+                        else{
+                            currentPos.z = boxMax.z;
+                        }
+                        input.worldPos = mul(collider.localToWorld, float4(currentPos, 1)).xyz;
+                        float3 speed = mul((float3x3)collider.worldToLocal, input.nowSpeed.xyz);
+                        speed.z = -speed.z * _CollsionScale;
+                        input.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                 }
                 return true;
