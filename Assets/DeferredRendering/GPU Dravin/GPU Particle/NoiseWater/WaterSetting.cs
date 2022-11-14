@@ -47,7 +47,7 @@ namespace DefferedRender
         public float frequency = 1;
         [Min(0.1f)]
         public float particleIntensity = 0.5f;
-        [Range(0, 3f)]
+        [Range(0, 1f)]
         public float collsionScale = 1;
 
         [Range(1, 10)]
@@ -58,7 +58,7 @@ namespace DefferedRender
         public float bilaterFilterFactor = 0;
         [Range(0, 5)]
         public float blurRadius = 0.4f;
-        [ColorUsage(true)]
+        [ColorUsage(true, true)]
         public Color waterCol = Color.blue;
         [Min(0.01f)]
         public float maxFluidWidth = 3;

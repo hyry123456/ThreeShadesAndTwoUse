@@ -33,7 +33,7 @@ MonoBehaviour:
   frequency: 313.3
   groupIntensity: 30.09
   particleIntensity: 30
-  collsionScale: 1
+  collsionScale: 0.587
   particleGradient:
     serializedVersion: 2
     key0: {r: 0, g: 20.580393, b: 23.968628, a: 1}
@@ -142,4 +142,4 @@ MonoBehaviour:
     m_RotationOrder: 4
   groupTime: 5
   particleTime: 2
-  groupReleaseTime: 0.3
+  groupReleaseTime: 0.1

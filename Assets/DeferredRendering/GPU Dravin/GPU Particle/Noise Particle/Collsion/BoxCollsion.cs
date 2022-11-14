@@ -12,7 +12,7 @@ namespace DefferedRender
             CollsionStruct collsion = new CollsionStruct();
             collsion.mode = 0;
             collsion.center = transform.position;
-            collsion.offset = cubeOffset;
+            collsion.offset = cubeOffset * 0.5f;
             collsion.localToWorld = transform.localToWorldMatrix;
             collsion.worldToLocal = transform.worldToLocalMatrix;
             return collsion;
@@ -23,7 +23,7 @@ namespace DefferedRender
         {
             Gizmos.color = Color.green;
             Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.DrawWireCube(Vector3.zero, cubeOffset * 2);
+            Gizmos.DrawWireCube(Vector3.zero, cubeOffset);
         }
 #endif
     }

@@ -225,6 +225,8 @@ namespace DefferedRender
 
             if (this.collsions == null) this.collsions = new List<IGetCollsion>();
             List<CollsionStruct> collsions = new List<CollsionStruct>();
+            for(int i=this.collsions.Count - 1; i>=0; i--)
+                if (this.collsions[i] == null) this.collsions.RemoveAt(i);
             for (int i = 0; i < this.collsions.Count; i++)
             {
                 collsions.Add(this.collsions[i].GetCollsionStruct());

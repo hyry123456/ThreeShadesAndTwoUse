@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -37,7 +38,7 @@ namespace DefferedRender
         /// <summary> /// 是否需要开启碰撞  /// </summary>
         public bool useCollsion;
         [SerializeField]
-        public IGetCollsion[] collsions;    //所有碰撞器数据
+        public List<IGetCollsion> collsions;    //所有碰撞器数据
 
         ParticleGroupsData[] groups;
         private ComputeBuffer particleBuffer;
@@ -60,7 +61,14 @@ namespace DefferedRender
             kernel_Perframe = compute.FindKernel("Noise_PerFrame");
             kernel_PerFixframe = compute.FindKernel("Noise_PerFixFrame");
             kernel_PerFixCollsion = compute.FindKernel("Noise_PerFixFrameWithCollsion");
-            if (collsions == null)
+
+            if (collsions != null)
+            {
+                for (int i = this.collsions.Count - 1; i >= 0; i--)
+                    if (this.collsions[i] == null) this.collsions.RemoveAt(i);
+            }
+
+            if (collsions == null || collsions.Count == 0)
                 useCollsion = false;
             ReadyMaterial();
             ReadyBuffer();
@@ -127,6 +135,15 @@ namespace DefferedRender
                 Gizmos.DrawWireCube(Vector3.zero, noiseData.cubeRange);
             }
         }
+
+        private void OnValidate()
+        {
+            if (!isInsert) return;
+            ReadyMaterial();
+            ReadyBuffer();
+            index = 0;
+            time = noiseData.releaseTime * 0.8f;
+        }
 #endif
 
         private void ReadyMaterial()
@@ -183,7 +200,7 @@ namespace DefferedRender
 
             if (useCollsion)
             {
-                CollsionStruct[] collsions = new CollsionStruct[this.collsions.Length];
+                CollsionStruct[] collsions = new CollsionStruct[this.collsions.Count];
                 for(int i=0; i<collsions.Length; i++)
                 {
                     collsions[i] = this.collsions[i].GetCollsionStruct();
@@ -207,7 +224,7 @@ namespace DefferedRender
                 compute.SetBuffer(kernel_PerFixCollsion, "_ParticleNoiseBuffer", particleBuffer);
                 compute.SetBuffer(kernel_PerFixCollsion, "_CollsionBuffer", collsionBuffer);
                 compute.SetFloat("_CollsionScale", noiseData.collsionScale);
-                compute.SetInt("_CollsionData", collsions.Length);
+                compute.SetInt("_CollsionData", collsions.Count);
             }
             else
             {
