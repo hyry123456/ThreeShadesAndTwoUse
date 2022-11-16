@@ -393,6 +393,7 @@ float BilateralDepthFilterFragment (Varyings input) : SV_DEPTH{
 }
 
 float4 _WaterColor;
+float3 _SpecularData;
 
 
 void BlendToTargetFrag(Varyings input,
@@ -413,10 +414,10 @@ void BlendToTargetFrag(Varyings input,
     clip(width - _CullOff);
     float3 normal = SAMPLE_TEXTURE2D(_NormalMap, sampler_MainTex, input.screenUV);
     normal = normal * 0.5 + 0.5;
-    width *= _WaterColor.w;
-    _GBufferColorTex = float4(_WaterColor.xyz, width);
+    // width *= _WaterColor.w;
+    _GBufferColorTex = float4(_WaterColor.xyz, width * _WaterColor.w);
     _GBufferNormalTex = float4(normal, width);
-    _GBufferSpecularTex = float4(0, 0.5, 0.3, width);
+    _GBufferSpecularTex = float4(_SpecularData, width);
 }
 
 float WriteDepth(Varyings input): SV_DEPTH

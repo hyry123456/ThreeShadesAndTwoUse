@@ -293,6 +293,7 @@ bool CheckCollsion(inout FluidGroup group){
 }
 
 bool CheckCollsion(inout FluidParticle particle){
+    bool re = false;
     for(uint i = 0; i < _CollsionData; i++){
         CollsionStruct collider = _CollsionBuffer[i];
         switch(collider.mode){
@@ -304,7 +305,7 @@ bool CheckCollsion(inout FluidParticle particle){
                     float3 force = dot(particle.nowSpeed, particle.nowSpeed) * forceDir;
                     particle.nowSpeed += force * _Time.z;
                     particle.worldPos = normalize(-duration) * collider.radius + collider.center;
-                    return true;
+                    re = true;
                 }
                 break;
             default:    //盒子碰撞
@@ -390,10 +391,11 @@ bool CheckCollsion(inout FluidParticle particle){
                         particle.nowSpeed = mul((float3x3)collider.localToWorld, speed);
                     }
                 }
-                return true;
+                re = true;
+                break;
         }
     }
-    return false;
+    return re;
 }
 
 void UpdataSpeed(inout FluidParticle input){

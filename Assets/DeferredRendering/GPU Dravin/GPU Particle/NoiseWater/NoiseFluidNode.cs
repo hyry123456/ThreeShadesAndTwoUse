@@ -93,7 +93,8 @@ namespace DefferedRender
             cameraDepthId = Shader.PropertyToID("_CameraDepth"),
             waterColorId = Shader.PropertyToID("_WaterColor"),
             maxFluidWidthId = Shader.PropertyToID("_MaxFluidWidth"),
-            cullOffId = Shader.PropertyToID("_CullOff");
+            cullOffId = Shader.PropertyToID("_CullOff"),
+            specularDataId = Shader.PropertyToID("_SpecularData");
 
 
         //compute Shader Data
@@ -389,7 +390,7 @@ namespace DefferedRender
                 widthTexId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
                 depthTexId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
             );
-            buffer.ClearRenderTarget(true, true, Color.clear);
+            buffer.ClearRenderTarget(false, true, Color.clear);
             buffer.DrawProcedural(Matrix4x4.identity, material, (int)FluidPass.Width,
                 MeshTopology.Points, 1, particleBuffer.count);
 
@@ -397,7 +398,7 @@ namespace DefferedRender
                 normalTexId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
                 depthTexId, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
                 );
-            buffer.ClearRenderTarget(true, true, Color.clear);
+            buffer.ClearRenderTarget(false, true, Color.clear);
 
             buffer.DrawProcedural(Matrix4x4.identity, material, (int)FluidPass.Normal,
                 MeshTopology.Points, 1, particleBuffer.count);
@@ -434,8 +435,8 @@ namespace DefferedRender
             buffer.SetGlobalColor(waterColorId, waterSetting.waterCol);
             buffer.SetGlobalFloat(maxFluidWidthId, waterSetting.maxFluidWidth);
             buffer.SetGlobalFloat(cullOffId, waterSetting.cullOff);
-
-
+            buffer.SetGlobalVector(specularDataId, new Vector3(waterSetting.metallic, 
+                waterSetting.smoothness, waterSetting.fresnel));
 
             buffer.DrawProcedural(
                 Matrix4x4.identity, material, (int)FluidPass.BlendTarget, 

@@ -33,6 +33,7 @@ MonoBehaviour:
   frequency: 100
   groupIntensity: 10
   particleIntensity: 20
+  collsionScale: 1
   particleGradient:
     serializedVersion: 2
     key0: {r: 0, g: 20.580393, b: 23.968628, a: 1}

@@ -64,6 +64,12 @@ namespace DefferedRender
         public Color waterCol = Color.blue;
         [Min(0.01f)]
         public float maxFluidWidth = 3;
+        [Range(0, 1f)]
+        public float metallic = 0.1f;
+        [Range(0, 1f)]
+        public float smoothness = 0.1f;
+        [Range(0, 1f)]
+        public float fresnel = 0.1f;
 
         public AnimationCurve particleSize = AnimationCurve.Linear(0, 0, 1, 1);
         private Vector4[] particleSizes;

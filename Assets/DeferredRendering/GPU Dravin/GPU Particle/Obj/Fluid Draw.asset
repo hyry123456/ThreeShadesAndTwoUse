@@ -14,34 +14,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   releaseTime: 0.1
   sustainTime: 10
-  groupShapeMode: 1
+  groupShapeMode: 0
   particleShadpeMode: 1
   groupSpeedMode: 0
   particleSpeedMode: 4
   sizeBySpeedMode: 0
   speedRange: {x: 0, y: 1}
-  sizeRange: {x: 0.2, y: 0.3}
+  sizeRange: {x: 0.3, y: 0.3}
   groupUseGravity: 1
   particleUseGravity: 1
   groupArc: 6.28
   particleArc: 6.28
   groupRadius: 0.67
-  particleRadius: 0.09
+  particleRadius: 0.1
   groupCubeRange: {x: 1, y: 1, z: 1}
   particleCubeRange: {x: 1, y: 1, z: 1}
-  groupVelocityBegin: {x: 0, y: 1, z: 0}
-  particleVelocityBegin: 3.26
+  groupVelocityBegin: {x: 0, y: -1, z: 8}
+  particleVelocityBegin: 6
   octave: 8
   frequency: 1
-  particleIntensity: 1
-  collsionScale: 0.414
+  particleIntensity: 0.1
+  collsionScale: 0.137
   obstruction: 0
-  circleBlur: 1
+  circleBlur: 6
   cullOff: 0
   bilaterFilterFactor: 0
   blurRadius: 0.98
-  waterCol: {r: 0.003921569, g: 0.4509804, b: 0.7490196, a: 1}
-  maxFluidWidth: 3
+  waterCol: {r: 0, g: 1.4117647, b: 2, a: 1}
+  maxFluidWidth: 1
+  metallic: 0
+  smoothness: 0.525
+  fresnel: 0
   particleSize:
     serializedVersion: 2
     m_Curve:
